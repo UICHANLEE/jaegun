@@ -8,18 +8,20 @@ from pathlib import Path
 
 from sqlmodel import Session, SQLModel, create_engine
 
-from jaegun.config import get_settings
+from jaegun.config import get_project_root, get_settings
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
-DATA_DIR = PROJECT_ROOT / "data"
+
+def _data_dir() -> Path:
+    return get_project_root() / "data"
 
 
 def _database_url() -> str:
     s = get_settings()
     if s.database_url:
         return s.database_url
-    DATA_DIR.mkdir(parents=True, exist_ok=True)
-    return f"sqlite:///{DATA_DIR / 'jaegun.db'}"
+    d = _data_dir()
+    d.mkdir(parents=True, exist_ok=True)
+    return f"sqlite:///{d / 'jaegun.db'}"
 
 
 def make_engine():

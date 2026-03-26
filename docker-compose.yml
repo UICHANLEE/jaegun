@@ -1,0 +1,17 @@
+# 로컬·VPS에서 공개 URL(또는 역프록시 뒤)로 서비스할 때
+services:
+  jaegun:
+    build: .
+    ports:
+      - "${PORT:-8000}:8000"
+    environment:
+      JAEGUN_PROJECT_ROOT: /app
+      ADMIN_TOKEN: ${ADMIN_TOKEN:-}
+      CORS_ORIGINS: ${CORS_ORIGINS:-*}
+      DATABASE_URL: ${DATABASE_URL:-}
+    volumes:
+      - jaegun-data:/app/data
+    restart: unless-stopped
+
+volumes:
+  jaegun-data:

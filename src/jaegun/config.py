@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -11,7 +13,22 @@ class Settings(BaseSettings):
     database_url: str | None = None
     # 공식 공지·일정·연간/월간 계획 생성·수정·삭제 시 필요. 환경 변수 ADMIN_TOKEN
     admin_token: str | None = None
+    # static/, data/ 기준 루트(절대 경로 권장). Docker·배포 시 한 번에 지정
+    jaegun_project_root: str | None = None
+    # 하위 호환: 프로젝트 루트만 알 때(구 설정). project_root가 없을 때만 사용
+    jaegun_static_root: str | None = None
 
 
 def get_settings() -> Settings:
     return Settings()
+
+
+def get_project_root() -> Path:
+    """소스 트리 또는 Docker WORKDIR 등 `static/`·`data/`가 있는 디렉터리."""
+    s = get_settings()
+    if s.jaegun_project_root:
+        return Path(s.jaegun_project_root).resolve()
+    if s.jaegun_static_root:
+        return Path(s.jaegun_static_root).resolve()
+    # src/jaegun/config.py → 저장소 루트
+    return Path(__file__).resolve().parents[2]

@@ -2,61 +2,159 @@
 <html lang="ko">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light" />
+    <meta name="theme-color" content="#0f766e" />
     <title>관리자 · Jaegun</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
-  <body>
-    <header>
-      <h1>관리자</h1>
-      <p>공식 공지·일정·계획·게시글 삭제 — <code>ADMIN_TOKEN</code> 필요</p>
-      <p><a class="back" href="/community/">← 커뮤니티로</a> · <a class="back" href="/docs">API 문서</a></p>
+  <body class="admin-body">
+    <header class="admin-top">
+      <div class="admin-top-inner">
+        <div>
+          <p class="eyebrow">Jaegun</p>
+          <h1>관리자</h1>
+        </div>
+        <div class="admin-top-links">
+          <a href="/community/">커뮤니티</a>
+          <a href="/docs">API 문서</a>
+          <a href="/">API 안내</a>
+        </div>
+      </div>
+      <nav class="tab-nav" aria-label="관리자 메뉴">
+        <button type="button" class="tab-btn active" data-tab="dash">개요</button>
+        <button type="button" class="tab-btn" data-tab="token">토큰</button>
+        <button type="button" class="tab-btn" data-tab="announce">공지</button>
+        <button type="button" class="tab-btn" data-tab="events">일정</button>
+        <button type="button" class="tab-btn" data-tab="plans">계획</button>
+        <button type="button" class="tab-btn" data-tab="board">게시판</button>
+      </nav>
     </header>
-    <main>
-      <div id="alert" class="alert" role="alert" hidden></div>
 
-      <section class="card">
-        <h2>토큰</h2>
-        <p class="hint">서버 <code>.env</code>의 <code>ADMIN_TOKEN</code>과 동일한 값을 입력해 저장하세요.</p>
-        <label>
-          관리자 토큰
-          <input id="admin-token" type="password" autocomplete="off" />
-        </label>
-        <button type="button" class="btn-save" id="admin-token-save">브라우저에 저장</button>
-        <p id="admin-token-hint" class="hint"></p>
-      </section>
+    <div class="admin-shell">
+      <main class="admin-main">
+        <div id="alert" class="alert" role="alert" hidden></div>
 
-      <section class="card">
-        <h2>공식 공지 등록</h2>
-        <form id="form-announce">
-          <label>제목 <input id="a-title" type="text" maxlength="200" required /></label>
-          <label>내용 <textarea id="a-body"></textarea></label>
-          <button type="submit">등록</button>
-        </form>
-      </section>
+        <section id="panel-dash" class="panel">
+          <div class="card">
+            <h2>한눈에</h2>
+            <p id="dash-summary" class="dash-summary">불러오는 중…</p>
+            <p class="hint">아래 탭에서 항목을 등록·삭제할 수 있습니다.</p>
+          </div>
+        </section>
 
-      <section class="card">
-        <h2>공식 일정 등록</h2>
-        <form id="form-event">
-          <label>제목 <input id="e-title" type="text" maxlength="200" required /></label>
-          <label>시작 <input id="e-starts" type="datetime-local" required /></label>
-          <label>장소 <input id="e-loc" type="text" maxlength="300" placeholder="선택" /></label>
-          <label>설명 <textarea id="e-desc" placeholder="선택"></textarea></label>
-          <button type="submit">등록</button>
-        </form>
-      </section>
+        <section id="panel-token" class="panel" hidden>
+          <div class="card">
+            <h2>관리자 토큰</h2>
+            <p class="hint">서버 <code>.env</code>의 <code>ADMIN_TOKEN</code>과 동일한 값을 저장하세요.</p>
+            <label>
+              토큰
+              <input id="admin-token" type="password" autocomplete="off" />
+            </label>
+            <button type="button" class="btn-secondary" id="admin-token-save">이 브라우저에 저장</button>
+            <p id="admin-token-hint" class="hint"></p>
+          </div>
+        </section>
 
-      <section class="card">
-        <h2>게시판 글 삭제</h2>
-        <p class="hint">글 ID는 목록 API 또는 커뮤니티에서 확인하세요.</p>
-        <form id="form-del-post">
-          <label>게시글 UUID <input id="del-post-id" type="text" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" required /></label>
-          <button type="submit">삭제</button>
-        </form>
-      </section>
+        <section id="panel-announce" class="panel" hidden>
+          <div class="card">
+            <h2>공식 공지 등록</h2>
+            <form id="form-announce">
+              <label>제목 <input id="a-title" type="text" maxlength="200" required /></label>
+              <label>내용 <textarea id="a-body"></textarea></label>
+              <button type="submit">등록</button>
+            </form>
+          </div>
+          <div class="card">
+            <h2>등록된 공지</h2>
+            <p id="announce-loading" class="muted">불러오는 중…</p>
+            <ul id="announce-list" class="item-list" hidden></ul>
+            <p id="announce-empty" class="muted" hidden>공지가 없습니다.</p>
+          </div>
+        </section>
 
-      <p class="hint">연간·월간 계획 수정은 <a href="/docs">Swagger</a>에서 <code>/admin/plans/...</code> 호출을 사용하세요.</p>
-    </main>
-    <script src="app.js" type="module"></script>
+        <section id="panel-events" class="panel" hidden>
+          <div class="card">
+            <h2>공식 일정 등록</h2>
+            <form id="form-event">
+              <label>제목 <input id="e-title" type="text" maxlength="200" required /></label>
+              <label>시작 <input id="e-starts" type="datetime-local" required /></label>
+              <label>장소 <input id="e-loc" type="text" maxlength="300" placeholder="선택" /></label>
+              <label>설명 <textarea id="e-desc" placeholder="선택"></textarea></label>
+              <button type="submit">등록</button>
+            </form>
+          </div>
+          <div class="card">
+            <h2>등록된 일정</h2>
+            <p id="events-loading" class="muted">불러오는 중…</p>
+            <ul id="event-list" class="item-list" hidden></ul>
+            <p id="event-empty" class="muted" hidden>일정이 없습니다.</p>
+          </div>
+        </section>
+
+        <section id="panel-plans" class="panel" hidden>
+          <div class="card">
+            <h2>연간 계획</h2>
+            <form id="form-annual">
+              <div class="row2">
+                <label>연도 <input id="an-year" type="number" min="2000" max="2100" required /></label>
+                <label>제목 <input id="an-title" type="text" maxlength="200" required /></label>
+              </div>
+              <label>내용 <textarea id="an-body"></textarea></label>
+              <button type="submit">연간 계획 등록</button>
+            </form>
+            <p id="annual-loading" class="muted">목록 불러오는 중…</p>
+            <ul id="annual-list" class="item-list tight" hidden></ul>
+          </div>
+          <div class="card">
+            <h2>월간 계획</h2>
+            <form id="form-monthly">
+              <div class="row3">
+                <label>연도 <input id="mo-year" type="number" min="2000" max="2100" required /></label>
+                <label>월
+                  <select id="mo-month" required>
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                    <option value="6">6</option>
+                    <option value="7">7</option>
+                    <option value="8">8</option>
+                    <option value="9">9</option>
+                    <option value="10">10</option>
+                    <option value="11">11</option>
+                    <option value="12">12</option>
+                  </select>
+                </label>
+                <label>제목 <input id="mo-title" type="text" maxlength="200" required /></label>
+              </div>
+              <label>내용 <textarea id="mo-body"></textarea></label>
+              <button type="submit">월간 계획 등록</button>
+            </form>
+            <div class="toolbar-inline">
+              <label class="inline">조회 연도
+                <input id="mo-list-year" type="number" min="2000" max="2100" />
+              </label>
+              <button type="button" class="btn-small" id="mo-refresh">목록 새로고침</button>
+            </div>
+            <p id="monthly-loading" class="muted">불러오는 중…</p>
+            <ul id="monthly-list" class="item-list tight" hidden></ul>
+            <p id="monthly-empty" class="muted" hidden>해당 연도에 월간 계획이 없습니다.</p>
+          </div>
+        </section>
+
+        <section id="panel-board" class="panel" hidden>
+          <div class="card">
+            <h2>게시판 글</h2>
+            <p class="hint">삭제 시 복구할 수 없습니다.</p>
+            <p id="board-loading" class="muted">불러오는 중…</p>
+            <ul id="board-list" class="item-list" hidden></ul>
+            <p id="board-empty" class="muted" hidden>글이 없습니다.</p>
+          </div>
+        </section>
+      </main>
+    </div>
+    <script src="app.js" defer></script>
   </body>
 </html>

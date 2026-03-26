@@ -1,19 +1,20 @@
 """FastAPI 앱 진입점."""
 
+import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from pathlib import Path
-
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import Response
+from fastapi.responses import FileResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from sqlmodel import Session
 
 from jaegun.api import admin, announcements, board, events, plans
-from jaegun.config import get_settings
+from jaegun.config import get_project_root, get_settings
 from jaegun.db import engine, init_db, seed_if_empty
+
+log = logging.getLogger(__name__)
 
 
 @asynccontextmanager
@@ -86,19 +87,46 @@ def create_app() -> FastAPI:
     app.include_router(events.router, prefix="/api")
     app.include_router(plans.router, prefix="/api")
 
-    project_root = Path(__file__).resolve().parent.parent.parent
+    project_root = get_project_root()
     static_community = project_root / "static" / "community"
+    static_admin = project_root / "static" / "admin"
+    admin_index = static_admin / "index.html"
+
+    if static_community.is_dir() and not static_admin.is_dir():
+        log.warning(
+            "static/community 는 있으나 static/admin 이 없습니다. "
+            "/admin UI 404 — 프로젝트 루트: %s (필요 시 JAEGUN_PROJECT_ROOT)",
+            project_root,
+        )
+
+    @app.get("/admin", include_in_schema=False)
+    def admin_ui_redirect() -> RedirectResponse:
+        if not admin_index.is_file():
+            raise HTTPException(
+                status_code=404,
+                detail="관리자 UI 없음: static/admin/index.html 이 프로젝트에 없습니다.",
+            )
+        return RedirectResponse(url="/admin/", status_code=307)
+
+    @app.get("/admin/", include_in_schema=False)
+    def admin_ui_index() -> FileResponse:
+        if not admin_index.is_file():
+            raise HTTPException(
+                status_code=404,
+                detail="관리자 UI 없음: static/admin/index.html 이 프로젝트에 없습니다.",
+            )
+        return FileResponse(admin_index, media_type="text/html; charset=utf-8")
+
     if static_community.is_dir():
         app.mount(
             "/community",
             StaticFiles(directory=str(static_community), html=True),
             name="community_ui",
         )
-    static_admin = project_root / "static" / "admin"
     if static_admin.is_dir():
         app.mount(
             "/admin",
-            StaticFiles(directory=str(static_admin), html=True),
+            StaticFiles(directory=str(static_admin), html=False),
             name="admin_ui",
         )
     return app
