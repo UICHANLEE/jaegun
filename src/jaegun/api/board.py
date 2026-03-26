@@ -1,4 +1,4 @@
-"""사용자 게시판 — 글 작성은 누구나, 삭제는 관리자만."""
+"""사용자 게시판 — 글 작성은 누구나. 삭제는 `/admin/board/posts/{id}`."""
 
 from uuid import UUID
 
@@ -8,7 +8,6 @@ from sqlmodel import Session, select
 
 from jaegun.db import get_session
 from jaegun.models import BoardPost
-from jaegun.security import require_admin
 
 router = APIRouter(prefix="/board", tags=["board"])
 
@@ -54,12 +53,3 @@ def create_post(body: BoardPostCreate, session: Session = Depends(get_session)) 
     session.commit()
     session.refresh(row)
     return row
-
-
-@router.delete("/posts/{post_id}", status_code=204, dependencies=[Depends(require_admin)])
-def delete_post(post_id: UUID, session: Session = Depends(get_session)) -> None:
-    row = session.get(BoardPost, post_id)
-    if row is None:
-        raise HTTPException(status_code=404, detail="글을 찾을 수 없습니다.")
-    session.delete(row)
-    session.commit()

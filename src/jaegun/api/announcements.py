@@ -1,4 +1,4 @@
-"""공지 CRUD."""
+"""공지 — 공개 조회만 (`/api/announcements`). 수정은 `/admin/announcements`."""
 
 from uuid import UUID
 
@@ -8,7 +8,6 @@ from sqlmodel import Session, select
 
 from jaegun.db import get_session
 from jaegun.models import Announcement
-from jaegun.security import require_admin
 
 router = APIRouter(prefix="/announcements", tags=["announcements"])
 
@@ -48,56 +47,3 @@ def get_announcement(
     if row is None:
         raise HTTPException(status_code=404, detail="공지를 찾을 수 없습니다.")
     return row
-
-
-@router.post(
-    "",
-    response_model=Announcement,
-    status_code=201,
-    dependencies=[Depends(require_admin)],
-)
-def create_announcement(
-    body: AnnouncementCreate,
-    session: Session = Depends(get_session),
-) -> Announcement:
-    row = Announcement(title=body.title, body=body.body)
-    session.add(row)
-    session.commit()
-    session.refresh(row)
-    return row
-
-
-@router.patch(
-    "/{announcement_id}",
-    response_model=Announcement,
-    dependencies=[Depends(require_admin)],
-)
-def patch_announcement(
-    announcement_id: UUID,
-    body: AnnouncementPatch,
-    session: Session = Depends(get_session),
-) -> Announcement:
-    row = session.get(Announcement, announcement_id)
-    if row is None:
-        raise HTTPException(status_code=404, detail="공지를 찾을 수 없습니다.")
-    data = body.model_dump(exclude_unset=True)
-    if not data:
-        return row
-    for k, v in data.items():
-        setattr(row, k, v)
-    session.add(row)
-    session.commit()
-    session.refresh(row)
-    return row
-
-
-@router.delete("/{announcement_id}", status_code=204, dependencies=[Depends(require_admin)])
-def delete_announcement(
-    announcement_id: UUID,
-    session: Session = Depends(get_session),
-) -> None:
-    row = session.get(Announcement, announcement_id)
-    if row is None:
-        raise HTTPException(status_code=404, detail="공지를 찾을 수 없습니다.")
-    session.delete(row)
-    session.commit()

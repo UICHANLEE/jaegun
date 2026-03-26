@@ -11,7 +11,7 @@ from fastapi.staticfiles import StaticFiles
 
 from sqlmodel import Session
 
-from jaegun.api import announcements, board, events, plans
+from jaegun.api import admin, announcements, board, events, plans
 from jaegun.config import get_settings
 from jaegun.db import engine, init_db, seed_if_empty
 
@@ -58,6 +58,8 @@ def create_app() -> FastAPI:
             "plans_annual": "/api/plans/annual",
             "plans_monthly": "/api/plans/monthly",
             "board_posts": "/api/board/posts",
+            "admin_ui": "/admin/",
+            "admin_api": "/admin",
         }
 
     @app.get("/health")
@@ -78,17 +80,26 @@ def create_app() -> FastAPI:
             media_type="image/svg+xml",
         )
 
+    app.include_router(admin.router)
     app.include_router(announcements.router, prefix="/api")
     app.include_router(board.router, prefix="/api")
     app.include_router(events.router, prefix="/api")
     app.include_router(plans.router, prefix="/api")
 
-    static_dir = Path(__file__).resolve().parent.parent.parent / "static" / "community"
-    if static_dir.is_dir():
+    project_root = Path(__file__).resolve().parent.parent.parent
+    static_community = project_root / "static" / "community"
+    if static_community.is_dir():
         app.mount(
             "/community",
-            StaticFiles(directory=str(static_dir), html=True),
+            StaticFiles(directory=str(static_community), html=True),
             name="community_ui",
+        )
+    static_admin = project_root / "static" / "admin"
+    if static_admin.is_dir():
+        app.mount(
+            "/admin",
+            StaticFiles(directory=str(static_admin), html=True),
+            name="admin_ui",
         )
     return app
 

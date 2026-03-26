@@ -51,26 +51,6 @@ async function fetchJson(path, options = {}) {
   return res.json();
 }
 
-async function fetchJsonAdmin(path, options = {}) {
-  const t = sessionStorage.getItem("jaegun_admin_token");
-  if (!t) {
-    throw new Error("더보기 탭에서 관리자 토큰을 저장한 뒤 다시 시도하세요.");
-  }
-  return fetchJson(path, {
-    ...options,
-    headers: {
-      Authorization: `Bearer ${t}`,
-      ...options.headers,
-    },
-  });
-}
-
-function syncAdminFormsVisibility() {
-  const el = document.getElementById("admin-forms");
-  const t = sessionStorage.getItem("jaegun_admin_token");
-  el.hidden = !t;
-}
-
 let upcomingOnly = true;
 
 async function loadFeed() {
@@ -193,11 +173,6 @@ function setTab(tab) {
   }
   if (tab === "board") {
     void loadBoard();
-  }
-  if (tab === "more") {
-    syncAdminFormsVisibility();
-    const saved = sessionStorage.getItem("jaegun_admin_token");
-    if (saved) document.getElementById("admin-token").value = saved;
   }
 }
 
@@ -398,66 +373,4 @@ document.getElementById("board-form").addEventListener("submit", async (e) => {
   }
 });
 
-document.getElementById("admin-token-save").addEventListener("click", () => {
-  const v = document.getElementById("admin-token").value.trim();
-  if (v) sessionStorage.setItem("jaegun_admin_token", v);
-  else sessionStorage.removeItem("jaegun_admin_token");
-  syncAdminFormsVisibility();
-  const hint = document.getElementById("admin-token-hint");
-  hint.textContent = v
-    ? "저장됨. 아래에서 공식 공지·일정을 등록할 수 있습니다."
-    : "토큰을 지웠습니다.";
-});
-
-document.getElementById("admin-announce-form").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const title = document.getElementById("admin-a-title").value.trim();
-  const body = document.getElementById("admin-a-body").value;
-  if (!title) return;
-  hideAlert();
-  try {
-    await fetchJsonAdmin("/api/announcements", {
-      method: "POST",
-      body: JSON.stringify({ title, body }),
-    });
-    document.getElementById("admin-a-title").value = "";
-    document.getElementById("admin-a-body").value = "";
-    setTab("home");
-    await loadFeed();
-  } catch (err) {
-    showAlert(err instanceof Error ? err.message : "공지 등록 실패");
-  }
-});
-
-document.getElementById("admin-event-form").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const title = document.getElementById("admin-e-title").value.trim();
-  const dt = document.getElementById("admin-e-starts").value;
-  const location = document.getElementById("admin-e-loc").value.trim();
-  const description = document.getElementById("admin-e-desc").value;
-  if (!title || !dt) return;
-  const starts_at = new Date(dt).toISOString();
-  hideAlert();
-  try {
-    await fetchJsonAdmin("/api/events", {
-      method: "POST",
-      body: JSON.stringify({
-        title,
-        starts_at,
-        location,
-        description,
-      }),
-    });
-    document.getElementById("admin-e-title").value = "";
-    document.getElementById("admin-e-starts").value = "";
-    document.getElementById("admin-e-loc").value = "";
-    document.getElementById("admin-e-desc").value = "";
-    setTab("events");
-    await loadFeed();
-  } catch (err) {
-    showAlert(err instanceof Error ? err.message : "일정 등록 실패");
-  }
-});
-
-syncAdminFormsVisibility();
 loadFeed();

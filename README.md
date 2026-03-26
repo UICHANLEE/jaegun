@@ -39,16 +39,16 @@ uv run jaegun-serve
 
 ## 권한 모델
 
-- **관리자** (`ADMIN_TOKEN`): 공식 공지, 공식 일정, 연간·월간 계획의 **생성·수정·삭제**. API에서는 `Authorization: Bearer <토큰>` 또는 `X-Admin-Token: <토큰>`.
-- **사용자**: **게시판**(`GET/POST /api/board/posts`)에서만 글 작성. 게시글 삭제는 관리자만 가능합니다.
+- **관리자** (`ADMIN_TOKEN`): **`/admin/...`** 엔드포인트에서 공식 공지·일정·연간·월간 계획의 **생성·수정·삭제**, 게시글 삭제. 헤더: `Authorization: Bearer <토큰>` 또는 `X-Admin-Token: <토큰>`.
+- **사용자**: **`/api/board/posts`** 에서만 글 작성(`POST`). 조회는 **`/api/*`** 공개 GET.
 
 ## 웹 UI (Branches 스타일)
 
-- 브라우저: **<http://127.0.0.1:8000/community/>**
-- **「게시판」**: 사용자 글 작성. **「더보기」**: 관리자 토큰 저장 후 공식 공지·일정 등록 폼.
-- 하단 **「계획」** 탭에서 연간(연도 선택)·월간(연도 선택 후 1~12월 그리드)을 볼 수 있습니다.
-- 정적 파일: 저장소 루트 `static/community/` (`index.html`, `styles.css`, `app.js`). 같은 출처에서 `/api/*`를 호출합니다.
-- `GET /` JSON의 `ui` 필드에도 경로가 있습니다.
+- **커뮤니티**: **<http://127.0.0.1:8000/community/>** — **「게시판」** 에서 사용자 글 작성, **「더보기」** 에서 **관리자 페이지**(`/admin/`) 링크.
+- **관리자 화면**: **<http://127.0.0.1:8000/admin/>** — 토큰 저장 후 공식 공지·일정 등록, 게시글 삭제(UUID). 연간·월간 계획은 Swagger의 `/admin/plans/...` 로 호출 가능.
+- 하단 **「계획」** 탭: 연간·월간 조회.
+- 정적 파일: `static/community/`, `static/admin/`.
+- `GET /` JSON에 `admin_ui`, `admin_api` 필드가 있습니다.
 
 ## 데이터
 
@@ -59,45 +59,47 @@ uv run jaegun-serve
 
 루트(`GET /`)는 엔드포인트 안내 JSON을 반환합니다. 상세는 Swagger를 사용하세요.
 
-**공지** (POST·PATCH·DELETE는 **관리자 토큰**)
+**공지** — 조회만 `/api`, **쓰기는 `/admin`**
 
 | 메서드 | 경로 | 설명 |
 |--------|------|------|
 | GET | `/api/announcements` | 목록 (`limit`, `offset`) |
-| POST | `/api/announcements` | 작성 |
 | GET | `/api/announcements/{id}` | 단건 |
-| PATCH | `/api/announcements/{id}` | 수정 |
-| DELETE | `/api/announcements/{id}` | 삭제 |
+| POST | `/admin/announcements` | 작성 (관리자 토큰) |
+| PATCH | `/admin/announcements/{id}` | 수정 (관리자 토큰) |
+| DELETE | `/admin/announcements/{id}` | 삭제 (관리자 토큰) |
 
-**일정** (POST·PATCH·DELETE는 **관리자 토큰** — 공식 일정)
+**일정** — 조회만 `/api`, **공식 일정 쓰기는 `/admin`**
 
 | 메서드 | 경로 | 설명 |
 |--------|------|------|
 | GET | `/api/events` | 목록 (`limit`, `offset`, `upcoming_only`) |
-| POST | `/api/events` | 작성 (`starts_at`, `ends_at`, `location` 등) |
 | GET | `/api/events/{id}` | 단건 |
-| PATCH | `/api/events/{id}` | 수정 |
-| DELETE | `/api/events/{id}` | 삭제 |
+| POST | `/admin/events` | 작성 (관리자 토큰) |
+| PATCH | `/admin/events/{id}` | 수정 (관리자 토큰) |
+| DELETE | `/admin/events/{id}` | 삭제 (관리자 토큰) |
 
-**게시판** (POST는 누구나, DELETE는 관리자)
+**게시판** — 사용자 `POST` 는 `/api`, **삭제는 `/admin`**
 
 | 메서드 | 경로 | 설명 |
 |--------|------|------|
 | GET | `/api/board/posts` | 목록 |
 | POST | `/api/board/posts` | 글 작성 (`title`, `body`, `author_name` 선택) |
 | GET | `/api/board/posts/{id}` | 단건 |
-| DELETE | `/api/board/posts/{id}` | 삭제(관리자) |
+| DELETE | `/admin/board/posts/{id}` | 삭제 (관리자 토큰) |
 
-**연간·월간 계획** (POST·PATCH·DELETE는 **관리자 토큰**)
+**연간·월간 계획** — 조회만 `/api`, **쓰기는 `/admin/plans/...`**
 
 | 메서드 | 경로 | 설명 |
 |--------|------|------|
-| GET | `/api/plans/annual` | 연간 계획 목록 (연도 내림차순) |
-| GET | `/api/plans/annual/{year}` | 연도별 연간 계획 단건 |
-| POST/PATCH/DELETE | `/api/plans/annual` … | 작성·수정·삭제 |
-| GET | `/api/plans/monthly?year=` | 해당 연도 월간 계획 목록 (월 오름차순) |
-| GET | `/api/plans/monthly/{year}/{month}` | 특정 월 단건 |
-| POST/PATCH/DELETE | `/api/plans/monthly` … | 작성·수정·삭제 |
+| GET | `/api/plans/annual` | 연간 목록 |
+| GET | `/api/plans/annual/{year}` | 연간 단건 |
+| GET | `/api/plans/monthly?year=` | 월간 목록 |
+| GET | `/api/plans/monthly/{year}/{month}` | 월간 단건 |
+| POST | `/admin/plans/annual` | 연간 작성 |
+| PATCH/DELETE | `/admin/plans/annual/{year}` | 수정·삭제 |
+| POST | `/admin/plans/monthly` | 월간 작성 |
+| PATCH/DELETE | `/admin/plans/monthly/{year}/{month}` | 수정·삭제 |
 
 기타: `GET /health`
 

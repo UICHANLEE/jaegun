@@ -1,4 +1,4 @@
-"""일정(모임·행사) CRUD."""
+"""일정 — 공개 조회만 (`/api/events`). 수정은 `/admin/events`."""
 
 from datetime import datetime
 from uuid import UUID
@@ -9,7 +9,6 @@ from sqlmodel import Session, select
 
 from jaegun.db import get_session
 from jaegun.models import Event
-from jaegun.security import require_admin
 
 router = APIRouter(prefix="/events", tags=["events"])
 
@@ -57,47 +56,3 @@ def get_event(event_id: UUID, session: Session = Depends(get_session)) -> Event:
     if row is None:
         raise HTTPException(status_code=404, detail="일정을 찾을 수 없습니다.")
     return row
-
-
-@router.post("", response_model=Event, status_code=201, dependencies=[Depends(require_admin)])
-def create_event(body: EventCreate, session: Session = Depends(get_session)) -> Event:
-    row = Event(
-        title=body.title,
-        description=body.description,
-        starts_at=body.starts_at,
-        ends_at=body.ends_at,
-        location=body.location,
-    )
-    session.add(row)
-    session.commit()
-    session.refresh(row)
-    return row
-
-
-@router.patch("/{event_id}", response_model=Event, dependencies=[Depends(require_admin)])
-def patch_event(
-    event_id: UUID,
-    body: EventPatch,
-    session: Session = Depends(get_session),
-) -> Event:
-    row = session.get(Event, event_id)
-    if row is None:
-        raise HTTPException(status_code=404, detail="일정을 찾을 수 없습니다.")
-    data = body.model_dump(exclude_unset=True)
-    if not data:
-        return row
-    for k, v in data.items():
-        setattr(row, k, v)
-    session.add(row)
-    session.commit()
-    session.refresh(row)
-    return row
-
-
-@router.delete("/{event_id}", status_code=204, dependencies=[Depends(require_admin)])
-def delete_event(event_id: UUID, session: Session = Depends(get_session)) -> None:
-    row = session.get(Event, event_id)
-    if row is None:
-        raise HTTPException(status_code=404, detail="일정을 찾을 수 없습니다.")
-    session.delete(row)
-    session.commit()
