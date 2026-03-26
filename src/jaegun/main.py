@@ -2,9 +2,11 @@
 
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from sqlmodel import Session
 
@@ -47,6 +49,7 @@ def create_app() -> FastAPI:
     def root() -> dict[str, str]:
         return {
             "service": "Jaegun API",
+            "ui": "/community/",
             "docs": "/docs",
             "health": "/health",
             "announcements": "/api/announcements",
@@ -59,6 +62,14 @@ def create_app() -> FastAPI:
 
     app.include_router(announcements.router, prefix="/api")
     app.include_router(events.router, prefix="/api")
+
+    static_dir = Path(__file__).resolve().parent.parent.parent / "static" / "community"
+    if static_dir.is_dir():
+        app.mount(
+            "/community",
+            StaticFiles(directory=str(static_dir), html=True),
+            name="community_ui",
+        )
     return app
 
 

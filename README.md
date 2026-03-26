@@ -26,6 +26,12 @@ uv run uvicorn jaegun.main:app --reload --host 127.0.0.1 --port 8000
 uv run jaegun-serve
 ```
 
+## 웹 UI (Branches 스타일)
+
+- 브라우저: **<http://127.0.0.1:8000/community/>**
+- 정적 파일: 저장소 루트 `static/community/` (`index.html`, `styles.css`, `app.js`). 같은 출처에서 `/api/*`를 호출합니다.
+- `GET /` JSON의 `ui` 필드에도 경로가 있습니다.
+
 ## 데이터
 
 - 기본: 프로젝트 루트 `data/jaegun.db` (SQLite, `.gitignore` 처리).
@@ -63,7 +69,7 @@ uv run jaegun-serve
 
 ## 상위 저장소(nohoi)와의 관계
 
-이 폴더는 **별도 Git 저장소**입니다. Next.js 프론트는 `../`(nohoi)에서 두고, API만 이쪽에서 키우거나, 나중에 `NEXT_PUBLIC_API_URL`로 이 서버를 바라보게 연결하면 됩니다.
+이 폴더는 **별도 Git 저장소**입니다. 투표용 Next.js(`../nohoi`)와는 독립이며, 커뮤니티 화면은 **이 저장소의 `/community/`** 에서 제공합니다.
 
 ## 환경 변수
 

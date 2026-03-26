@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light" />
+    <title>모임 · Jaegun</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="community-root">
+      <header class="app-header">
+        <div class="header-inner">
+          <div>
+            <p class="eyebrow">Community</p>
+            <h1>모임</h1>
+          </div>
+          <a class="back-link" href="/">API 안내</a>
+        </div>
+      </header>
+
+      <main>
+        <div id="alert" class="alert" role="alert" hidden></div>
+
+        <section id="panel-home" class="tab-panel">
+          <div class="hero">
+            <p style="margin: 0; font-size: 0.875rem; color: rgb(204 251 241 / 0.9)">이번 주</p>
+            <h2>함께하는 공동체</h2>
+            <p>공지와 일정을 한곳에서. (Branches 스타일 레이아웃 참고 · 자체 디자인)</p>
+          </div>
+          <h3 class="section-title" style="margin-top: 1.25rem">공지</h3>
+          <p id="home-loading" class="loading">불러오는 중…</p>
+          <ul id="announcement-list" class="card-list" hidden></ul>
+          <p id="announcement-empty" class="empty" hidden>아직 공지가 없습니다.</p>
+        </section>
+
+        <section id="panel-events" class="tab-panel" hidden>
+          <div class="toolbar">
+            <h3 class="section-title" style="margin: 0">일정</h3>
+            <label class="checkbox-label">
+              <input type="checkbox" id="upcoming-only" checked />
+              다가오는 일정만
+            </label>
+          </div>
+          <p id="events-loading" class="loading">불러오는 중…</p>
+          <ul id="event-list" class="card-list" hidden></ul>
+          <p id="event-empty" class="empty" hidden>일정이 없습니다.</p>
+        </section>
+
+        <section id="panel-more" class="tab-panel" hidden>
+          <div class="card">
+            <h3 class="section-title" style="margin-top: 0">빠른 링크</h3>
+            <ul class="more-list">
+              <li><span>기부 · 헌금</span><span class="muted">준비 중</span></li>
+              <li><span>소그룹</span><span class="muted">준비 중</span></li>
+              <li><span>메시지 · 설교</span><span class="muted">준비 중</span></li>
+            </ul>
+          </div>
+          <form id="compose-form" class="card compose" style="margin-top: 1rem">
+            <h3 class="section-title" style="margin-top: 0">새 공지 작성</h3>
+            <p class="hint">MVP: 인증 없이 작성됩니다. 운영 시 관리자 권한을 붙이세요.</p>
+            <label>
+              제목
+              <input id="draft-title" type="text" maxlength="200" placeholder="주일 안내" required />
+            </label>
+            <label>
+              내용
+              <textarea id="draft-body" placeholder="상세 내용"></textarea>
+            </label>
+            <button type="submit" id="submit-btn">공지 등록</button>
+          </form>
+        </section>
+      </main>
+
+      <nav class="bottom-nav" aria-label="주요 메뉴">
+        <div class="nav-inner">
+          <button type="button" class="nav-btn active" data-tab="home" aria-current="page">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="2">
+              <path
+                d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1V9.5z"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+            홈
+          </button>
+          <button type="button" class="nav-btn" data-tab="events">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="2">
+              <rect x="3" y="4" width="18" height="18" rx="2" />
+              <path d="M16 2v4M8 2v4M3 10h18" stroke-linecap="round" />
+            </svg>
+            일정
+          </button>
+          <button type="button" class="nav-btn" data-tab="more">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="2">
+              <path d="M4 6h16M4 12h16M4 18h16" stroke-linecap="round" />
+            </svg>
+            더보기
+          </button>
+        </div>
+      </nav>
+    </div>
+    <script src="app.js" type="module"></script>
+  </body>
+</html>
