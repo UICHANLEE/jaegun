@@ -1,5 +1,7 @@
 # Jaegun
 
+**저장소:** [github.com/UICHANLEE/jaegun](https://github.com/UICHANLEE/jaegun)
+
 웹을 먼저 만들고, 같은 API를 나중에 iOS/Android 앱이 쓰기 좋게 **백엔드를 분리**한 실험 저장소입니다.
 
 ## 요구 사항
