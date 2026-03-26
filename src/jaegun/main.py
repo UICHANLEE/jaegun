@@ -6,6 +6,7 @@ from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import Response
 from fastapi.staticfiles import StaticFiles
 
 from sqlmodel import Session
@@ -61,6 +62,20 @@ def create_app() -> FastAPI:
     @app.get("/health")
     def health() -> dict[str, str]:
         return {"status": "ok"}
+
+    @app.get("/favicon.ico", include_in_schema=False)
+    def favicon() -> Response:
+        svg = (
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">'
+            '<rect width="32" height="32" rx="7" fill="#0f766e"/>'
+            '<text x="16" y="22" text-anchor="middle" fill="white" '
+            'font-size="15" font-family="system-ui,sans-serif" font-weight="600">J</text>'
+            "</svg>"
+        )
+        return Response(
+            content=svg.encode("utf-8"),
+            media_type="image/svg+xml",
+        )
 
     app.include_router(announcements.router, prefix="/api")
     app.include_router(events.router, prefix="/api")

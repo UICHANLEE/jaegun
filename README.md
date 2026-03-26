@@ -26,6 +26,16 @@ uv run uvicorn jaegun.main:app --reload --host 127.0.0.1 --port 8000
 uv run jaegun-serve
 ```
 
+### 문제 해결
+
+| 증상 | 조치 |
+|------|------|
+| `ModuleNotFoundError: No module named 'sqlmodel'` | 프로젝트 루트(`jaegun`)에서 **`uv sync`** 후 다시 `uv run uvicorn …`. 의존성 추가 직후 리로더 자식 프로세스가 한 번 실패할 수 있어, 한 번 서버를 끄고 다시 켜면 됩니다. |
+| `GET /` 가 404 | 최신 `main.py`에는 `GET /` 안내 JSON이 있습니다. 예전 프로세스면 재시작하세요. |
+| 브라우저가 `/favicon.ico` 요청 | 서버가 SVG 파비콘을 제공합니다(콘솔 404는 이후 버전에서 사라짐). |
+
+**권장:** 서버는 `conda`가 아닌 **`uv run`** 으로만 실행해 가상환경과 패키지를 맞춥니다.
+
 ## 웹 UI (Branches 스타일)
 
 - 브라우저: **<http://127.0.0.1:8000/community/>**
