@@ -1,0 +1,21 @@
+[project]
+name = "jaegun"
+version = "0.1.0"
+description = "커뮤니티(공지·일정 등) API — 웹 우선, 이후 모바일 앱이 같은 API 사용"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.32",
+    "pydantic-settings>=2.6",
+]
+
+[project.scripts]
+jaegun-serve = "jaegun.main:run_dev"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/jaegun"]
