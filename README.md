@@ -29,6 +29,7 @@ uv run jaegun-serve
 ## 웹 UI (Branches 스타일)
 
 - 브라우저: **<http://127.0.0.1:8000/community/>**
+- 하단 **「계획」** 탭에서 연간(연도 선택)·월간(연도 선택 후 1~12월 그리드)을 볼 수 있습니다.
 - 정적 파일: 저장소 루트 `static/community/` (`index.html`, `styles.css`, `app.js`). 같은 출처에서 `/api/*`를 호출합니다.
 - `GET /` JSON의 `ui` 필드에도 경로가 있습니다.
 
@@ -60,6 +61,17 @@ uv run jaegun-serve
 | GET | `/api/events/{id}` | 단건 |
 | PATCH | `/api/events/{id}` | 수정 |
 | DELETE | `/api/events/{id}` | 삭제 |
+
+**연간·월간 계획**
+
+| 메서드 | 경로 | 설명 |
+|--------|------|------|
+| GET | `/api/plans/annual` | 연간 계획 목록 (연도 내림차순) |
+| GET | `/api/plans/annual/{year}` | 연도별 연간 계획 단건 |
+| POST/PATCH/DELETE | `/api/plans/annual` … | 작성·수정·삭제 |
+| GET | `/api/plans/monthly?year=` | 해당 연도 월간 계획 목록 (월 오름차순) |
+| GET | `/api/plans/monthly/{year}/{month}` | 특정 월 단건 |
+| POST/PATCH/DELETE | `/api/plans/monthly` … | 작성·수정·삭제 |
 
 기타: `GET /health`
 

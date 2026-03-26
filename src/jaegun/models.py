@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from uuid import UUID, uuid4
 
+from sqlalchemy import UniqueConstraint
 from sqlmodel import Field, SQLModel
 
 
@@ -31,3 +32,28 @@ class Event(SQLModel, table=True):
     ends_at: datetime | None = None
     location: str = Field(default="", max_length=300)
     created_at: datetime = Field(default_factory=utc_now)
+
+
+class AnnualPlan(SQLModel, table=True):
+    """연도별 연간 계획 (연도당 1건)."""
+
+    __tablename__ = "annual_plan"
+
+    year: int = Field(primary_key=True)
+    title: str = Field(max_length=200)
+    body: str = ""
+    updated_at: datetime = Field(default_factory=utc_now)
+
+
+class MonthlyPlan(SQLModel, table=True):
+    """연·월별 월간 계획."""
+
+    __tablename__ = "monthly_plan"
+    __table_args__ = (UniqueConstraint("year", "month", name="uq_monthly_year_month"),)
+
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    year: int = Field(index=True)
+    month: int = Field(ge=1, le=12, index=True)
+    title: str = Field(max_length=200)
+    body: str = ""
+    updated_at: datetime = Field(default_factory=utc_now)

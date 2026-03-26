@@ -124,6 +124,34 @@ function escapeHtml(s) {
   return div.innerHTML;
 }
 
+const MONTH_LABELS = [
+  "1월",
+  "2월",
+  "3월",
+  "4월",
+  "5월",
+  "6월",
+  "7월",
+  "8월",
+  "9월",
+  "10월",
+  "11월",
+  "12월",
+];
+
+let planSubTab = "annual";
+let planYear = new Date().getFullYear();
+let selectedAnnualYear = planYear;
+let annualList = [];
+let monthlyList = [];
+
+function fmtPlanUpdated(iso) {
+  return new Intl.DateTimeFormat("ko-KR", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(iso));
+}
+
 function setTab(tab) {
   document.querySelectorAll(".tab-panel").forEach((p) => {
     p.hidden = p.id !== `panel-${tab}`;
@@ -134,10 +162,145 @@ function setTab(tab) {
     if (active) b.setAttribute("aria-current", "page");
     else b.removeAttribute("aria-current");
   });
+  if (tab === "plans") {
+    void loadPlans();
+  }
+}
+
+async function loadPlans() {
+  hideAlert();
+  const loading = document.getElementById("plans-loading");
+  loading.hidden = false;
+  document.getElementById("plan-annual-wrap").hidden = true;
+  document.getElementById("plan-monthly-wrap").hidden = true;
+  try {
+    annualList = await fetchJson("/api/plans/annual");
+    monthlyList = await fetchJson(`/api/plans/monthly?year=${planYear}`);
+    if (annualList.length) {
+      const years = annualList.map((a) => a.year);
+      if (!years.includes(selectedAnnualYear)) {
+        selectedAnnualYear = Math.max(...years);
+      }
+    }
+    renderPlanPanels();
+  } catch (e) {
+    showAlert(
+      e instanceof Error ? e.message : "계획을 불러오지 못했습니다."
+    );
+  } finally {
+    loading.hidden = true;
+  }
+}
+
+function renderPlanPanels() {
+  document.getElementById("plan-annual-wrap").hidden = planSubTab !== "annual";
+  document.getElementById("plan-monthly-wrap").hidden = planSubTab !== "monthly";
+  if (planSubTab === "annual") renderAnnual();
+  else renderMonthly();
+}
+
+function renderAnnual() {
+  const wrap = document.getElementById("plan-annual-wrap");
+  wrap.hidden = false;
+  if (!annualList.length) {
+    wrap.innerHTML = '<p class="empty">등록된 연간 계획이 없습니다.</p>';
+    return;
+  }
+  const years = [...new Set(annualList.map((a) => a.year))].sort((a, b) => b - a);
+  if (!years.includes(selectedAnnualYear)) {
+    selectedAnnualYear = years[0];
+  }
+  const item = annualList.find((a) => a.year === selectedAnnualYear);
+  if (!item) {
+    wrap.innerHTML = '<p class="empty">해당 연도 계획을 찾을 수 없습니다.</p>';
+    return;
+  }
+  const yearOpts = years
+    .map(
+      (y) =>
+        `<option value="${y}" ${y === selectedAnnualYear ? "selected" : ""}>${y}년</option>`
+    )
+    .join("");
+  wrap.innerHTML = `
+    <div class="plan-toolbar">
+      <label>연도 <select id="annual-year-select">${yearOpts}</select></label>
+    </div>
+    <div class="card">
+      <h4 style="margin:0;font-size:1rem">${escapeHtml(item.title)}</h4>
+      <p class="card-meta">${fmtPlanUpdated(item.updated_at)}</p>
+      <div class="plan-body-text">${escapeHtml(item.body)}</div>
+    </div>
+  `;
+  document.getElementById("annual-year-select").addEventListener("change", (e) => {
+    selectedAnnualYear = Number(e.target.value);
+    renderAnnual();
+  });
+}
+
+function renderMonthly() {
+  const wrap = document.getElementById("plan-monthly-wrap");
+  wrap.hidden = false;
+  const byMonth = new Map(monthlyList.map((m) => [m.month, m]));
+  const y0 = new Date().getFullYear();
+  const yearMin = y0 - 2;
+  const yearMax = y0 + 3;
+  let yearOpts = "";
+  for (let y = yearMin; y <= yearMax; y++) {
+    yearOpts += `<option value="${y}" ${y === planYear ? "selected" : ""}>${y}년</option>`;
+  }
+  let grid = "";
+  for (let m = 1; m <= 12; m++) {
+    const row = byMonth.get(m);
+    grid += `
+      <div class="card month-card ${row ? "" : "muted"}">
+        <h4 style="margin:0;font-size:0.9rem">${MONTH_LABELS[m - 1]}</h4>
+        ${
+          row
+            ? `
+          <p style="margin:0.35rem 0 0;font-size:0.85rem;font-weight:600">${escapeHtml(row.title)}</p>
+          <p class="card-meta">${fmtPlanUpdated(row.updated_at)}</p>
+          <div class="plan-body-text" style="margin-top:0.5rem;font-size:0.8rem">${escapeHtml(row.body)}</div>
+        `
+            : `<p class="muted" style="margin:0.35rem 0 0;font-size:0.8rem">등록된 계획 없음</p>`
+        }
+      </div>
+    `;
+  }
+  wrap.innerHTML = `
+    <div class="plan-toolbar">
+      <label>연도 <select id="monthly-year-select">${yearOpts}</select></label>
+    </div>
+    <div class="month-grid">${grid}</div>
+  `;
+  document.getElementById("monthly-year-select").addEventListener("change", async (e) => {
+    planYear = Number(e.target.value);
+    document.getElementById("plans-loading").hidden = false;
+    hideAlert();
+    try {
+      monthlyList = await fetchJson(`/api/plans/monthly?year=${planYear}`);
+      renderMonthly();
+    } catch (err) {
+      showAlert(err instanceof Error ? err.message : "불러오기 실패");
+    } finally {
+      document.getElementById("plans-loading").hidden = true;
+    }
+  });
 }
 
 document.querySelectorAll(".nav-btn").forEach((btn) => {
   btn.addEventListener("click", () => setTab(btn.dataset.tab));
+});
+
+document.querySelectorAll("[data-plan-sub]").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    planSubTab = btn.dataset.planSub;
+    document.querySelectorAll("[data-plan-sub]").forEach((b) => {
+      const on = b.dataset.planSub === planSubTab;
+      b.classList.toggle("active", on);
+      b.setAttribute("aria-selected", on ? "true" : "false");
+    });
+    renderPlanPanels();
+  });
 });
 
 document.getElementById("upcoming-only").addEventListener("change", (e) => {

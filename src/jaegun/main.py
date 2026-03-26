@@ -10,7 +10,7 @@ from fastapi.staticfiles import StaticFiles
 
 from sqlmodel import Session
 
-from jaegun.api import announcements, events
+from jaegun.api import announcements, events, plans
 from jaegun.config import get_settings
 from jaegun.db import engine, init_db, seed_if_empty
 
@@ -54,6 +54,8 @@ def create_app() -> FastAPI:
             "health": "/health",
             "announcements": "/api/announcements",
             "events": "/api/events",
+            "plans_annual": "/api/plans/annual",
+            "plans_monthly": "/api/plans/monthly",
         }
 
     @app.get("/health")
@@ -62,6 +64,7 @@ def create_app() -> FastAPI:
 
     app.include_router(announcements.router, prefix="/api")
     app.include_router(events.router, prefix="/api")
+    app.include_router(plans.router, prefix="/api")
 
     static_dir = Path(__file__).resolve().parent.parent.parent / "static" / "community"
     if static_dir.is_dir():

@@ -47,6 +47,20 @@
           <p id="event-empty" class="empty" hidden>일정이 없습니다.</p>
         </section>
 
+        <section id="panel-plans" class="tab-panel" hidden>
+          <div class="plan-subnav" role="tablist" aria-label="계획 종류">
+            <button type="button" class="plan-sub-btn active" data-plan-sub="annual" role="tab" aria-selected="true">
+              연간
+            </button>
+            <button type="button" class="plan-sub-btn" data-plan-sub="monthly" role="tab" aria-selected="false">
+              월간
+            </button>
+          </div>
+          <p id="plans-loading" class="loading" hidden>불러오는 중…</p>
+          <div id="plan-annual-wrap" hidden></div>
+          <div id="plan-monthly-wrap" hidden></div>
+        </section>
+
         <section id="panel-more" class="tab-panel" hidden>
           <div class="card">
             <h3 class="section-title" style="margin-top: 0">빠른 링크</h3>
@@ -90,6 +104,12 @@
               <path d="M16 2v4M8 2v4M3 10h18" stroke-linecap="round" />
             </svg>
             일정
+          </button>
+          <button type="button" class="nav-btn" data-tab="plans">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="2">
+              <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" stroke-linecap="round" />
+            </svg>
+            계획
           </button>
           <button type="button" class="nav-btn" data-tab="more">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="2">

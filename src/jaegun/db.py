@@ -34,7 +34,7 @@ engine = make_engine()
 
 
 def init_db() -> None:
-    from jaegun.models import Announcement, Event  # noqa: F401
+    from jaegun.models import Announcement, AnnualPlan, Event, MonthlyPlan  # noqa: F401
 
     SQLModel.metadata.create_all(engine)
 
@@ -51,7 +51,7 @@ def utc_sample_start() -> datetime:
 def seed_if_empty(session: Session) -> None:
     from sqlmodel import select
 
-    from jaegun.models import Announcement, Event
+    from jaegun.models import Announcement, AnnualPlan, Event, MonthlyPlan
 
     if session.exec(select(Announcement)).first() is None:
         session.add(
@@ -69,4 +69,33 @@ def seed_if_empty(session: Session) -> None:
                 location="온라인",
             )
         )
+
+    y = datetime.now().year
+    if session.get(AnnualPlan, y) is None:
+        session.add(
+            AnnualPlan(
+                year=y,
+                title=f"{y}년 연간 사역 계획",
+                body=(
+                    "· 봄·여름·가을·겨울 주요 행사 정리\n"
+                    "· 분기별 점검\n"
+                    "· (운영에서 내용을 수정하세요.)"
+                ),
+            )
+        )
+    if session.exec(select(MonthlyPlan).where(MonthlyPlan.year == y)).first() is None:
+        for m in (1, 2, 3):
+            session.add(
+                MonthlyPlan(
+                    year=y,
+                    month=m,
+                    title=f"{m}월 안내",
+                    body=(
+                        f"{y}년 {m}월의 월간 계획입니다.\n"
+                        "· 주일 예배\n"
+                        "· 구역 모임\n"
+                        "· (운영에서 수정하세요.)"
+                    ),
+                )
+            )
     session.commit()
