@@ -6,12 +6,18 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from jaegun.api import announcements
+from sqlmodel import Session
+
+from jaegun.api import announcements, events
 from jaegun.config import get_settings
+from jaegun.db import engine, init_db, seed_if_empty
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+    init_db()
+    with Session(engine) as session:
+        seed_if_empty(session)
     yield
 
 
@@ -37,11 +43,22 @@ def create_app() -> FastAPI:
             allow_headers=["*"],
         )
 
+    @app.get("/")
+    def root() -> dict[str, str]:
+        return {
+            "service": "Jaegun API",
+            "docs": "/docs",
+            "health": "/health",
+            "announcements": "/api/announcements",
+            "events": "/api/events",
+        }
+
     @app.get("/health")
     def health() -> dict[str, str]:
         return {"status": "ok"}
 
     app.include_router(announcements.router, prefix="/api")
+    app.include_router(events.router, prefix="/api")
     return app
 
 
