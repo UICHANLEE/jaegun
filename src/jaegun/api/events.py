@@ -9,6 +9,7 @@ from sqlmodel import Session, select
 
 from jaegun.db import get_session
 from jaegun.models import Event
+from jaegun.security import require_admin
 
 router = APIRouter(prefix="/events", tags=["events"])
 
@@ -58,7 +59,7 @@ def get_event(event_id: UUID, session: Session = Depends(get_session)) -> Event:
     return row
 
 
-@router.post("", response_model=Event, status_code=201)
+@router.post("", response_model=Event, status_code=201, dependencies=[Depends(require_admin)])
 def create_event(body: EventCreate, session: Session = Depends(get_session)) -> Event:
     row = Event(
         title=body.title,
@@ -73,7 +74,7 @@ def create_event(body: EventCreate, session: Session = Depends(get_session)) -> 
     return row
 
 
-@router.patch("/{event_id}", response_model=Event)
+@router.patch("/{event_id}", response_model=Event, dependencies=[Depends(require_admin)])
 def patch_event(
     event_id: UUID,
     body: EventPatch,
@@ -93,7 +94,7 @@ def patch_event(
     return row
 
 
-@router.delete("/{event_id}", status_code=204)
+@router.delete("/{event_id}", status_code=204, dependencies=[Depends(require_admin)])
 def delete_event(event_id: UUID, session: Session = Depends(get_session)) -> None:
     row = session.get(Event, event_id)
     if row is None:

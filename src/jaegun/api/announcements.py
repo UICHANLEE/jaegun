@@ -8,6 +8,7 @@ from sqlmodel import Session, select
 
 from jaegun.db import get_session
 from jaegun.models import Announcement
+from jaegun.security import require_admin
 
 router = APIRouter(prefix="/announcements", tags=["announcements"])
 
@@ -49,7 +50,12 @@ def get_announcement(
     return row
 
 
-@router.post("", response_model=Announcement, status_code=201)
+@router.post(
+    "",
+    response_model=Announcement,
+    status_code=201,
+    dependencies=[Depends(require_admin)],
+)
 def create_announcement(
     body: AnnouncementCreate,
     session: Session = Depends(get_session),
@@ -61,7 +67,11 @@ def create_announcement(
     return row
 
 
-@router.patch("/{announcement_id}", response_model=Announcement)
+@router.patch(
+    "/{announcement_id}",
+    response_model=Announcement,
+    dependencies=[Depends(require_admin)],
+)
 def patch_announcement(
     announcement_id: UUID,
     body: AnnouncementPatch,
@@ -81,7 +91,7 @@ def patch_announcement(
     return row
 
 
-@router.delete("/{announcement_id}", status_code=204)
+@router.delete("/{announcement_id}", status_code=204, dependencies=[Depends(require_admin)])
 def delete_announcement(
     announcement_id: UUID,
     session: Session = Depends(get_session),

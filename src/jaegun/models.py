@@ -34,6 +34,18 @@ class Event(SQLModel, table=True):
     created_at: datetime = Field(default_factory=utc_now)
 
 
+class BoardPost(SQLModel, table=True):
+    """사용자 게시판 글(공식 일정과 분리)."""
+
+    __tablename__ = "board_post"
+
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    title: str = Field(max_length=200, index=True)
+    body: str = ""
+    author_name: str = Field(default="", max_length=100)
+    created_at: datetime = Field(default_factory=utc_now)
+
+
 class AnnualPlan(SQLModel, table=True):
     """연도별 연간 계획 (연도당 1건)."""
 

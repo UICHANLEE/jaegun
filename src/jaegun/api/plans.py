@@ -7,6 +7,7 @@ from sqlmodel import Session, select
 
 from jaegun.db import get_session
 from jaegun.models import AnnualPlan, MonthlyPlan
+from jaegun.security import require_admin
 
 router = APIRouter(prefix="/plans", tags=["plans"])
 
@@ -51,7 +52,12 @@ def get_annual(year: int, session: Session = Depends(get_session)) -> AnnualPlan
     return row
 
 
-@router.post("/annual", response_model=AnnualPlan, status_code=201)
+@router.post(
+    "/annual",
+    response_model=AnnualPlan,
+    status_code=201,
+    dependencies=[Depends(require_admin)],
+)
 def create_annual(body: AnnualCreate, session: Session = Depends(get_session)) -> AnnualPlan:
     if session.get(AnnualPlan, body.year) is not None:
         raise HTTPException(status_code=409, detail="이미 해당 연도 연간 계획이 있습니다.")
@@ -62,7 +68,11 @@ def create_annual(body: AnnualCreate, session: Session = Depends(get_session)) -
     return row
 
 
-@router.patch("/annual/{year}", response_model=AnnualPlan)
+@router.patch(
+    "/annual/{year}",
+    response_model=AnnualPlan,
+    dependencies=[Depends(require_admin)],
+)
 def patch_annual(
     year: int,
     body: AnnualPatch,
@@ -83,7 +93,7 @@ def patch_annual(
     return row
 
 
-@router.delete("/annual/{year}", status_code=204)
+@router.delete("/annual/{year}", status_code=204, dependencies=[Depends(require_admin)])
 def delete_annual(year: int, session: Session = Depends(get_session)) -> None:
     row = session.get(AnnualPlan, year)
     if row is None:
@@ -125,7 +135,12 @@ def get_monthly(
     return row
 
 
-@router.post("/monthly", response_model=MonthlyPlan, status_code=201)
+@router.post(
+    "/monthly",
+    response_model=MonthlyPlan,
+    status_code=201,
+    dependencies=[Depends(require_admin)],
+)
 def create_monthly(body: MonthlyCreate, session: Session = Depends(get_session)) -> MonthlyPlan:
     exists = session.exec(
         select(MonthlyPlan).where(
@@ -147,7 +162,11 @@ def create_monthly(body: MonthlyCreate, session: Session = Depends(get_session))
     return row
 
 
-@router.patch("/monthly/{year}/{month}", response_model=MonthlyPlan)
+@router.patch(
+    "/monthly/{year}/{month}",
+    response_model=MonthlyPlan,
+    dependencies=[Depends(require_admin)],
+)
 def patch_monthly(
     year: int,
     month: int,
@@ -173,7 +192,11 @@ def patch_monthly(
     return row
 
 
-@router.delete("/monthly/{year}/{month}", status_code=204)
+@router.delete(
+    "/monthly/{year}/{month}",
+    status_code=204,
+    dependencies=[Depends(require_admin)],
+)
 def delete_monthly(
     year: int,
     month: int,

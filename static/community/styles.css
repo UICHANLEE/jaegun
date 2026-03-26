@@ -247,6 +247,23 @@ form.compose button:disabled {
   cursor: not-allowed;
 }
 
+.admin-save-btn {
+  margin-top: 0.5rem;
+  width: 100%;
+  border: none;
+  border-radius: 0.75rem;
+  padding: 0.6rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #fff;
+  background: rgb(87 83 78);
+  cursor: pointer;
+}
+
+.admin-save-btn:hover {
+  background: rgb(68 64 60);
+}
+
 .hint {
   margin: 0.25rem 0 0;
   font-size: 0.75rem;

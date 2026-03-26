@@ -34,7 +34,7 @@ engine = make_engine()
 
 
 def init_db() -> None:
-    from jaegun.models import Announcement, AnnualPlan, Event, MonthlyPlan  # noqa: F401
+    from jaegun.models import Announcement, AnnualPlan, BoardPost, Event, MonthlyPlan  # noqa: F401
 
     SQLModel.metadata.create_all(engine)
 
@@ -51,7 +51,7 @@ def utc_sample_start() -> datetime:
 def seed_if_empty(session: Session) -> None:
     from sqlmodel import select
 
-    from jaegun.models import Announcement, AnnualPlan, Event, MonthlyPlan
+    from jaegun.models import Announcement, AnnualPlan, BoardPost, Event, MonthlyPlan
 
     if session.exec(select(Announcement)).first() is None:
         session.add(
@@ -98,4 +98,12 @@ def seed_if_empty(session: Session) -> None:
                     ),
                 )
             )
+    if session.exec(select(BoardPost)).first() is None:
+        session.add(
+            BoardPost(
+                title="게시판 안내",
+                body="여기는 사용자 게시판입니다. 공식 일정·공지는 관리자만 등록합니다.",
+                author_name="운영",
+            )
+        )
     session.commit()

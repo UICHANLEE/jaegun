@@ -11,7 +11,7 @@ from fastapi.staticfiles import StaticFiles
 
 from sqlmodel import Session
 
-from jaegun.api import announcements, events, plans
+from jaegun.api import announcements, board, events, plans
 from jaegun.config import get_settings
 from jaegun.db import engine, init_db, seed_if_empty
 
@@ -57,6 +57,7 @@ def create_app() -> FastAPI:
             "events": "/api/events",
             "plans_annual": "/api/plans/annual",
             "plans_monthly": "/api/plans/monthly",
+            "board_posts": "/api/board/posts",
         }
 
     @app.get("/health")
@@ -78,6 +79,7 @@ def create_app() -> FastAPI:
         )
 
     app.include_router(announcements.router, prefix="/api")
+    app.include_router(board.router, prefix="/api")
     app.include_router(events.router, prefix="/api")
     app.include_router(plans.router, prefix="/api")
 

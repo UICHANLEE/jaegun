@@ -26,9 +26,9 @@
           <div class="hero">
             <p style="margin: 0; font-size: 0.875rem; color: rgb(204 251 241 / 0.9)">이번 주</p>
             <h2>함께하는 공동체</h2>
-            <p>공지와 일정을 한곳에서. (Branches 스타일 레이아웃 참고 · 자체 디자인)</p>
+            <p>공식 공지·일정은 관리자만 등록합니다. 자유 글은 <strong>게시판</strong> 탭에서 작성하세요.</p>
           </div>
-          <h3 class="section-title" style="margin-top: 1.25rem">공지</h3>
+          <h3 class="section-title" style="margin-top: 1.25rem">공식 공지</h3>
           <p id="home-loading" class="loading">불러오는 중…</p>
           <ul id="announcement-list" class="card-list" hidden></ul>
           <p id="announcement-empty" class="empty" hidden>아직 공지가 없습니다.</p>
@@ -45,6 +45,32 @@
           <p id="events-loading" class="loading">불러오는 중…</p>
           <ul id="event-list" class="card-list" hidden></ul>
           <p id="event-empty" class="empty" hidden>일정이 없습니다.</p>
+        </section>
+
+        <section id="panel-board" class="tab-panel" hidden>
+          <h3 class="section-title">게시판</h3>
+          <p class="hint" style="margin: 0 0 0.75rem">
+            누구나 글을 쓸 수 있습니다. 공식 일정은 <strong>일정</strong> 탭(관리자 등록)만 사용하세요.
+          </p>
+          <p id="board-loading" class="loading">불러오는 중…</p>
+          <ul id="board-list" class="card-list" hidden></ul>
+          <p id="board-empty" class="empty" hidden>아직 글이 없습니다.</p>
+          <form id="board-form" class="card compose" style="margin-top: 1rem">
+            <h3 class="section-title" style="margin-top: 0">글쓰기</h3>
+            <label>
+              닉네임 (선택)
+              <input id="board-author" type="text" maxlength="100" placeholder="익명" />
+            </label>
+            <label>
+              제목
+              <input id="board-title" type="text" maxlength="200" required />
+            </label>
+            <label>
+              내용
+              <textarea id="board-body" placeholder="내용을 입력하세요"></textarea>
+            </label>
+            <button type="submit" id="board-submit">등록</button>
+          </form>
         </section>
 
         <section id="panel-plans" class="tab-panel" hidden>
@@ -70,19 +96,53 @@
               <li><span>메시지 · 설교</span><span class="muted">준비 중</span></li>
             </ul>
           </div>
-          <form id="compose-form" class="card compose" style="margin-top: 1rem">
-            <h3 class="section-title" style="margin-top: 0">새 공지 작성</h3>
-            <p class="hint">MVP: 인증 없이 작성됩니다. 운영 시 관리자 권한을 붙이세요.</p>
+          <div class="card" style="margin-top: 1rem">
+            <h3 class="section-title" style="margin-top: 0">관리자</h3>
+            <p class="hint">
+              공식 공지·일정·계획을 등록하려면 서버 <code>.env</code>의 <code>ADMIN_TOKEN</code>과 같은 값을 입력해 저장하세요.
+            </p>
             <label>
-              제목
-              <input id="draft-title" type="text" maxlength="200" placeholder="주일 안내" required />
+              관리자 토큰
+              <input id="admin-token" type="password" autocomplete="off" placeholder="Bearer로 전송됩니다" />
             </label>
-            <label>
-              내용
-              <textarea id="draft-body" placeholder="상세 내용"></textarea>
-            </label>
-            <button type="submit" id="submit-btn">공지 등록</button>
-          </form>
+            <button type="button" class="admin-save-btn" id="admin-token-save">브라우저에 저장</button>
+            <p id="admin-token-hint" class="hint"></p>
+          </div>
+          <div class="card" id="admin-forms" style="margin-top: 1rem" hidden>
+            <h3 class="section-title" style="margin-top: 0">공식 공지 등록</h3>
+            <form id="admin-announce-form">
+              <label>
+                제목
+                <input id="admin-a-title" type="text" maxlength="200" required />
+              </label>
+              <label>
+                내용
+                <textarea id="admin-a-body"></textarea>
+              </label>
+              <button type="submit">공지 등록</button>
+            </form>
+            <hr style="margin: 1.25rem 0; border: none; border-top: 1px solid rgb(231 229 228)" />
+            <h3 class="section-title" style="margin-top: 0">공식 일정 등록</h3>
+            <form id="admin-event-form">
+              <label>
+                제목
+                <input id="admin-e-title" type="text" maxlength="200" required />
+              </label>
+              <label>
+                시작 시각
+                <input id="admin-e-starts" type="datetime-local" required />
+              </label>
+              <label>
+                장소
+                <input id="admin-e-loc" type="text" maxlength="300" placeholder="온라인 등" />
+              </label>
+              <label>
+                설명
+                <textarea id="admin-e-desc" placeholder="선택"></textarea>
+              </label>
+              <button type="submit">일정 등록</button>
+            </form>
+          </div>
         </section>
       </main>
 
@@ -110,6 +170,13 @@
               <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" stroke-linecap="round" />
             </svg>
             계획
+          </button>
+          <button type="button" class="nav-btn" data-tab="board">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="2">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" stroke-linecap="round" />
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+            </svg>
+            게시판
           </button>
           <button type="button" class="nav-btn" data-tab="more">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="2">
