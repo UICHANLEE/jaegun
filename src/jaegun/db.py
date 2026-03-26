@@ -36,9 +36,37 @@ engine = make_engine()
 
 
 def init_db() -> None:
-    from jaegun.models import Announcement, AnnualPlan, BoardPost, Event, MonthlyPlan  # noqa: F401
+    from jaegun.models import (  # noqa: F401
+        Announcement,
+        AnnualPlan,
+        BoardPost,
+        Event,
+        EventTicket,
+        MonthlyPlan,
+    )
 
     SQLModel.metadata.create_all(engine)
+    _migrate_sqlite_event_columns(engine)
+
+
+def _migrate_sqlite_event_columns(engine) -> None:
+    """기존 SQLite DB에 event.survey_* 컬럼 추가(신규 테이블은 create_all로 생성)."""
+
+    url = str(engine.url)
+    if not url.startswith("sqlite"):
+        return
+    with engine.connect() as conn:
+        rows = conn.exec_driver_sql("PRAGMA table_info(event)").fetchall()
+        cols = {r[1] for r in rows}
+        if "survey_url" not in cols:
+            conn.exec_driver_sql(
+                "ALTER TABLE event ADD COLUMN survey_url VARCHAR(2000) NOT NULL DEFAULT ''"
+            )
+        if "survey_label" not in cols:
+            conn.exec_driver_sql(
+                "ALTER TABLE event ADD COLUMN survey_label VARCHAR(200) NOT NULL DEFAULT '참석 여부 설문조사'"
+            )
+        conn.commit()
 
 
 def get_session() -> Generator[Session, None, None]:

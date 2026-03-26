@@ -403,3 +403,163 @@ form.compose button:disabled {
   opacity: 0.75;
   border-style: dashed;
 }
+
+/* 일정 상세 모달 */
+.event-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0;
+}
+
+.event-modal[hidden] {
+  display: none !important;
+}
+
+.event-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgb(0 0 0 / 0.45);
+}
+
+.event-modal-panel {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 32rem;
+  max-height: 90dvh;
+  overflow-y: auto;
+  margin: 0 auto;
+  padding: 1.25rem 1rem calc(1.25rem + env(safe-area-inset-bottom));
+  border-radius: 1.25rem 1.25rem 0 0;
+  background: #fff;
+  box-shadow: 0 -8px 32px rgb(0 0 0 / 0.2);
+}
+
+@media (min-width: 480px) {
+  .event-modal {
+    align-items: center;
+    padding: 1rem;
+  }
+
+  .event-modal-panel {
+    border-radius: 1.25rem;
+    padding: 1.5rem;
+    max-height: 85dvh;
+  }
+}
+
+.event-modal-close {
+  position: absolute;
+  top: 0.65rem;
+  right: 0.65rem;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: none;
+  border-radius: 999px;
+  background: rgb(245 245 244);
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+  color: rgb(87 83 78);
+}
+
+.event-modal-title {
+  margin: 0 2rem 0.35rem 0;
+  font-size: 1.125rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.event-modal-meta {
+  margin: 0 0 0.75rem;
+  font-size: 0.8125rem;
+  color: rgb(120 113 108);
+}
+
+.event-modal-body {
+  font-size: 0.9375rem;
+  line-height: 1.65;
+  color: rgb(68 64 60);
+  white-space: pre-wrap;
+}
+
+.event-modal-body:empty {
+  display: none;
+}
+
+.event-modal-survey {
+  padding: 0.85rem 1rem;
+  border-radius: 0.75rem;
+  background: rgb(250 250 249);
+  border: 1px solid rgb(231 229 228);
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.event-modal-survey-heading {
+  margin: 0 0 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgb(87 83 78);
+}
+
+.survey-link {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: rgb(13 148 136);
+  word-break: break-all;
+}
+
+.event-modal-actions {
+  margin-top: 1rem;
+}
+
+.btn-issue {
+  width: 100%;
+  border: none;
+  border-radius: 0.75rem;
+  padding: 0.75rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #fff;
+  background: var(--comm-accent);
+  cursor: pointer;
+}
+
+.btn-issue:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.ticket-result {
+  margin: 1rem 0 0;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  text-align: center;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: rgb(19 78 74);
+  background: rgb(204 251 241);
+  border: 1px solid rgb(153 246 228);
+}
+
+.event-detail-btn {
+  margin-top: 0.65rem;
+  width: 100%;
+  border: 1px solid rgb(204 251 241);
+  border-radius: 0.75rem;
+  padding: 0.45rem 0.65rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--comm-accent);
+  background: rgb(240 253 250);
+  cursor: pointer;
+}
+
+.event-detail-btn:active {
+  opacity: 0.9;
+}

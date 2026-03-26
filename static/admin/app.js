@@ -173,15 +173,44 @@ async function loadEvents() {
     list.innerHTML = rows
       .map(
         (ev) => `
-      <li class="item-row">
-        <div class="item-main">
+      <li class="item-row event-admin-item" style="flex-wrap:wrap">
+        <div class="item-main" style="min-width:12rem;flex:1">
           <strong>${escapeHtml(ev.title)}</strong>
           <span class="item-meta">${formatDt(ev.starts_at)}${ev.location ? ` · ${escapeHtml(ev.location)}` : ""}</span>
         </div>
-        <button type="button" class="btn-danger btn-small" data-del-event="${ev.id}">삭제</button>
+        <div style="display:flex;flex-wrap:wrap;gap:0.35rem;align-items:center">
+          <button type="button" class="btn-secondary btn-small" data-tickets-event="${ev.id}">발급 목록</button>
+          <button type="button" class="btn-danger btn-small" data-del-event="${ev.id}">삭제</button>
+        </div>
+        <ul class="admin-ticket-list muted" id="admin-tickets-${ev.id}" hidden style="width:100%;margin:0.35rem 0 0;padding-left:1.1rem;font-size:0.8rem;list-style:disc"></ul>
       </li>`
       )
       .join("");
+    list.querySelectorAll("[data-tickets-event]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const id = btn.getAttribute("data-tickets-event");
+        const ul = document.getElementById(`admin-tickets-${id}`);
+        if (!ul) return;
+        if (!ul.hidden && ul.dataset.loaded === "1") {
+          ul.hidden = true;
+          return;
+        }
+        try {
+          const tickets = await fetchAdmin(`/admin/events/${id}/tickets`);
+          ul.hidden = false;
+          ul.dataset.loaded = "1";
+          if (!tickets.length) {
+            ul.innerHTML = `<li>아직 발급된 번호가 없습니다.</li>`;
+            return;
+          }
+          ul.innerHTML = tickets
+            .map((t) => `<li><strong>#${t.sequence_number}</strong> — ${formatDt(t.created_at)}</li>`)
+            .join("");
+        } catch (e) {
+          showAlert(e.message, true);
+        }
+      });
+    });
     list.querySelectorAll("[data-del-event]").forEach((btn) => {
       btn.addEventListener("click", async () => {
         if (!confirm("이 일정을 삭제할까요?")) return;
@@ -406,6 +435,9 @@ document.getElementById("form-event").addEventListener("submit", async (e) => {
   const starts_at = new Date(startsRaw).toISOString();
   const description = document.getElementById("e-desc").value;
   const location = document.getElementById("e-loc").value.trim();
+  const survey_url = document.getElementById("e-survey-url").value.trim();
+  const survey_label =
+    document.getElementById("e-survey-label").value.trim() || "참석 여부 설문조사";
   try {
     await fetchAdmin("/admin/events", {
       method: "POST",
@@ -415,6 +447,8 @@ document.getElementById("form-event").addEventListener("submit", async (e) => {
         starts_at,
         ends_at: null,
         location,
+        survey_url,
+        survey_label,
       }),
     });
     showAlert("일정을 등록했습니다.", false);

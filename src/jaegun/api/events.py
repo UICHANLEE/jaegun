@@ -5,10 +5,11 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
+from sqlalchemy import func
 from sqlmodel import Session, select
 
 from jaegun.db import get_session
-from jaegun.models import Event
+from jaegun.models import Event, EventTicket
 
 router = APIRouter(prefix="/events", tags=["events"])
 
@@ -19,6 +20,8 @@ class EventCreate(BaseModel):
     starts_at: datetime
     ends_at: datetime | None = None
     location: str = Field(default="", max_length=300)
+    survey_url: str = Field(default="", max_length=2000)
+    survey_label: str = Field(default="참석 여부 설문조사", max_length=200)
 
 
 class EventPatch(BaseModel):
@@ -27,6 +30,13 @@ class EventPatch(BaseModel):
     starts_at: datetime | None = None
     ends_at: datetime | None = None
     location: str | None = Field(default=None, max_length=300)
+    survey_url: str | None = Field(default=None, max_length=2000)
+    survey_label: str | None = Field(default=None, max_length=200)
+
+
+class EventTicketIssued(BaseModel):
+    sequence_number: int
+    created_at: datetime
 
 
 @router.get("")
@@ -48,6 +58,29 @@ def list_events(
         stmt = stmt.where(Event.starts_at >= now)
     stmt = stmt.order_by(Event.starts_at.asc()).offset(offset).limit(limit)
     return list(session.exec(stmt).all())
+
+
+@router.post(
+    "/{event_id}/tickets",
+    response_model=EventTicketIssued,
+    status_code=201,
+    summary="일정 참석·대기 번호 발급 (1부터 순번)",
+)
+def issue_event_ticket(event_id: UUID, session: Session = Depends(get_session)) -> EventTicketIssued:
+    ev = session.get(Event, event_id)
+    if ev is None:
+        raise HTTPException(status_code=404, detail="일정을 찾을 수 없습니다.")
+    max_n = session.exec(
+        select(func.coalesce(func.max(EventTicket.sequence_number), 0)).where(
+            EventTicket.event_id == event_id
+        )
+    ).one()
+    n = int(max_n) + 1
+    row = EventTicket(event_id=event_id, sequence_number=n)
+    session.add(row)
+    session.commit()
+    session.refresh(row)
+    return EventTicketIssued(sequence_number=row.sequence_number, created_at=row.created_at)
 
 
 @router.get("/{event_id}", response_model=Event)

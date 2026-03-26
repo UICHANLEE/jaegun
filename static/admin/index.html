@@ -80,7 +80,25 @@
               <label>제목 <input id="e-title" type="text" maxlength="200" required /></label>
               <label>시작 <input id="e-starts" type="datetime-local" required /></label>
               <label>장소 <input id="e-loc" type="text" maxlength="300" placeholder="선택" /></label>
-              <label>설명 <textarea id="e-desc" placeholder="선택"></textarea></label>
+              <label>설명 <textarea id="e-desc" placeholder="선택 — 모임 상세 안내(참가자에게 표시)"></textarea></label>
+              <label
+                >설문 링크 (Google 폼 등, 선택)
+                <input
+                  id="e-survey-url"
+                  type="url"
+                  maxlength="2000"
+                  placeholder="https://docs.google.com/forms/..."
+                /></label
+              >
+              <label
+                >설문 영역 제목
+                <input
+                  id="e-survey-label"
+                  type="text"
+                  maxlength="200"
+                  placeholder="참석 여부 설문조사"
+                /></label
+              >
               <button type="submit">등록</button>
             </form>
           </div>

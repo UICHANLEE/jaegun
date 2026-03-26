@@ -107,11 +107,14 @@ async function loadFeed() {
             <h4 style="margin:0;font-size:1rem">${escapeHtml(ev.title)}</h4>
             <p style="margin:0.25rem 0 0;font-size:0.75rem;color:#78716c">${fmtDateOnly(ev.starts_at)}</p>
             ${ev.location ? `<p style="margin:0.25rem 0 0;font-size:0.75rem">📍 ${escapeHtml(ev.location)}</p>` : ""}
-            ${ev.description ? `<p style="margin:0.5rem 0 0;font-size:0.875rem;color:#57534e;line-height:1.5">${escapeHtml(ev.description)}</p>` : ""}
+            <button type="button" class="event-detail-btn" data-open-event="${ev.id}">일정 상세 · 설문 · 번호 발급</button>
           </div>
         `;
         evUl.appendChild(li);
       }
+      evUl.querySelectorAll("[data-open-event]").forEach((btn) => {
+        btn.addEventListener("click", () => openEventModal(btn.getAttribute("data-open-event")));
+      });
     }
   } catch (e) {
     showAlert(
@@ -129,6 +132,80 @@ function escapeHtml(s) {
   div.textContent = s;
   return div.innerHTML;
 }
+
+function normalizeUrl(u) {
+  const t = (u || "").trim();
+  if (!t) return "";
+  if (/^https?:\/\//i.test(t)) return t;
+  return `https://${t.replace(/^\/+/, "")}`;
+}
+
+let currentEventId = null;
+
+function closeEventModal() {
+  document.getElementById("event-modal").hidden = true;
+  const out = document.getElementById("event-modal-ticket-result");
+  out.hidden = true;
+  out.textContent = "";
+  currentEventId = null;
+}
+
+async function openEventModal(eventId) {
+  currentEventId = eventId;
+  hideAlert();
+  const modal = document.getElementById("event-modal");
+  try {
+    const ev = await fetchJson(`/api/events/${eventId}`);
+    document.getElementById("event-modal-title").textContent = ev.title;
+    let meta = fmtDateOnly(ev.starts_at);
+    if (ev.location) meta += ` · ${ev.location}`;
+    document.getElementById("event-modal-meta").textContent = meta;
+    const bodyEl = document.getElementById("event-modal-body");
+    bodyEl.textContent = ev.description?.trim()
+      ? ev.description
+      : "등록된 상세 설명이 없습니다.";
+    const survey = document.getElementById("event-modal-survey");
+    const link = document.getElementById("event-modal-survey-link");
+    const heading = survey.querySelector(".event-modal-survey-heading");
+    const url = normalizeUrl(ev.survey_url || "");
+    if (url) {
+      survey.hidden = false;
+      heading.textContent = ev.survey_label || "참석 여부 설문조사";
+      link.href = url;
+    } else {
+      survey.hidden = true;
+    }
+    document.getElementById("event-modal-ticket-result").hidden = true;
+    document.getElementById("event-modal-ticket-result").textContent = "";
+    modal.hidden = false;
+  } catch (e) {
+    showAlert(e instanceof Error ? e.message : "일정을 불러오지 못했습니다.");
+  }
+}
+
+document.getElementById("event-modal")?.addEventListener("click", (e) => {
+  if (e.target.closest("[data-close-modal]")) closeEventModal();
+});
+
+document.getElementById("event-modal-issue-btn")?.addEventListener("click", async () => {
+  if (!currentEventId) return;
+  const btn = document.getElementById("event-modal-issue-btn");
+  const out = document.getElementById("event-modal-ticket-result");
+  btn.disabled = true;
+  hideAlert();
+  try {
+    const r = await fetchJson(`/api/events/${currentEventId}/tickets`, {
+      method: "POST",
+      body: "{}",
+    });
+    out.hidden = false;
+    out.textContent = `발급 번호: ${r.sequence_number}`;
+  } catch (e) {
+    showAlert(e instanceof Error ? e.message : "번호 발급에 실패했습니다.");
+  } finally {
+    btn.disabled = false;
+  }
+});
 
 const MONTH_LABELS = [
   "1월",

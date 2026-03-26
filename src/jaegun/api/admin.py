@@ -16,7 +16,7 @@ from jaegun.api.plans import (
     MonthlyPatch,
 )
 from jaegun.db import get_session
-from jaegun.models import Announcement, AnnualPlan, BoardPost, Event, MonthlyPlan
+from jaegun.models import Announcement, AnnualPlan, BoardPost, Event, EventTicket, MonthlyPlan
 from jaegun.security import require_admin
 
 router = APIRouter(
@@ -76,6 +76,12 @@ def admin_delete_announcement(
 # --- 일정 ---
 
 
+class EventTicketRow(BaseModel):
+    id: UUID
+    sequence_number: int
+    created_at: datetime
+
+
 @router.post("/events", response_model=Event, status_code=201)
 def admin_create_event(body: EventCreate, session: Session = Depends(get_session)) -> Event:
     row = Event(
@@ -84,6 +90,8 @@ def admin_create_event(body: EventCreate, session: Session = Depends(get_session
         starts_at=body.starts_at,
         ends_at=body.ends_at,
         location=body.location,
+        survey_url=body.survey_url.strip(),
+        survey_label=(body.survey_label or "참석 여부 설문조사").strip() or "참석 여부 설문조사",
     )
     session.add(row)
     session.commit()
@@ -111,11 +119,31 @@ def admin_patch_event(
     return row
 
 
+@router.get("/events/{event_id}/tickets", response_model=list[EventTicketRow])
+def admin_list_event_tickets(
+    event_id: UUID,
+    session: Session = Depends(get_session),
+) -> list[EventTicketRow]:
+    if session.get(Event, event_id) is None:
+        raise HTTPException(status_code=404, detail="일정을 찾을 수 없습니다.")
+    rows = session.exec(
+        select(EventTicket)
+        .where(EventTicket.event_id == event_id)
+        .order_by(EventTicket.sequence_number.asc())
+    ).all()
+    return [
+        EventTicketRow(id=r.id, sequence_number=r.sequence_number, created_at=r.created_at)
+        for r in rows
+    ]
+
+
 @router.delete("/events/{event_id}", status_code=204)
 def admin_delete_event(event_id: UUID, session: Session = Depends(get_session)) -> None:
     row = session.get(Event, event_id)
     if row is None:
         raise HTTPException(status_code=404, detail="일정을 찾을 수 없습니다.")
+    for t in session.exec(select(EventTicket).where(EventTicket.event_id == event_id)).all():
+        session.delete(t)
     session.delete(row)
     session.commit()
 

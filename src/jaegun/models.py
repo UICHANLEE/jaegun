@@ -31,6 +31,20 @@ class Event(SQLModel, table=True):
     starts_at: datetime = Field(index=True)
     ends_at: datetime | None = None
     location: str = Field(default="", max_length=300)
+    survey_url: str = Field(default="", max_length=2000)
+    survey_label: str = Field(default="참석 여부 설문조사", max_length=200)
+    created_at: datetime = Field(default_factory=utc_now)
+
+
+class EventTicket(SQLModel, table=True):
+    """일정별 참석·대기 번호(1부터 순번)."""
+
+    __tablename__ = "event_ticket"
+    __table_args__ = (UniqueConstraint("event_id", "sequence_number", name="uq_event_ticket_seq"),)
+
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    event_id: UUID = Field(foreign_key="event.id", index=True)
+    sequence_number: int = Field(ge=1, index=True)
     created_at: datetime = Field(default_factory=utc_now)
 
 
