@@ -3,16 +3,17 @@
 import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from sqlmodel import Session
 
-from jaegun.api import admin, announcements, board, events, plans
+from jaegun.api import admin, announcements, auth_api, board, events, meetings, member, plans
 from jaegun.config import get_project_root, get_settings
 from jaegun.db import engine, init_db, seed_if_empty
+from jaegun.security import require_admin
 
 log = logging.getLogger(__name__)
 
@@ -83,11 +84,16 @@ def create_app() -> FastAPI:
 
     app.include_router(admin.router)
     app.include_router(announcements.router, prefix="/api")
+    app.include_router(auth_api.router, prefix="/api")
+    app.include_router(member.router, prefix="/api")
+    app.include_router(meetings.router, prefix="/api")
     app.include_router(board.router, prefix="/api")
     app.include_router(events.router, prefix="/api")
     app.include_router(plans.router, prefix="/api")
 
     project_root = get_project_root()
+    uploads_dir = project_root / "data" / "uploads"
+    uploads_dir.mkdir(parents=True, exist_ok=True)
     static_community = project_root / "static" / "community"
     static_admin = project_root / "static" / "admin"
     admin_index = static_admin / "index.html"
@@ -108,6 +114,10 @@ def create_app() -> FastAPI:
             )
         return RedirectResponse(url="/admin/", status_code=307)
 
+    @app.get("/admin/verify", include_in_schema=False)
+    def admin_verify(_: None = Depends(require_admin)) -> dict[str, bool]:
+        return {"ok": True}
+
     @app.get("/admin/", include_in_schema=False)
     def admin_ui_index() -> FileResponse:
         if not admin_index.is_file():
@@ -117,6 +127,11 @@ def create_app() -> FastAPI:
             )
         return FileResponse(admin_index, media_type="text/html; charset=utf-8")
 
+    app.mount(
+        "/uploads",
+        StaticFiles(directory=str(uploads_dir)),
+        name="uploads",
+    )
     if static_community.is_dir():
         app.mount(
             "/community",

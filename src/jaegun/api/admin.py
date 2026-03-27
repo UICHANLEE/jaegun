@@ -16,7 +16,7 @@ from jaegun.api.plans import (
     MonthlyPatch,
 )
 from jaegun.db import get_session
-from jaegun.models import Announcement, AnnualPlan, BoardPost, Event, EventTicket, MonthlyPlan
+from jaegun.models import Announcement, AnnualPlan, BoardPost, Event, EventTicket, MonthlyPlan, User
 from jaegun.security import require_admin
 
 router = APIRouter(
@@ -80,6 +80,13 @@ class EventTicketRow(BaseModel):
     id: UUID
     sequence_number: int
     created_at: datetime
+    participant_name: str
+    participant_age: int | None
+    participant_church: str
+    user_id: UUID | None = None
+    member_phone: str | None = None
+    member_gender: str | None = None
+    member_display_name: str | None = None
 
 
 @router.post("/events", response_model=Event, status_code=201)
@@ -131,10 +138,24 @@ def admin_list_event_tickets(
         .where(EventTicket.event_id == event_id)
         .order_by(EventTicket.sequence_number.asc())
     ).all()
-    return [
-        EventTicketRow(id=r.id, sequence_number=r.sequence_number, created_at=r.created_at)
-        for r in rows
-    ]
+    out: list[EventTicketRow] = []
+    for r in rows:
+        u = session.get(User, r.user_id) if r.user_id else None
+        out.append(
+            EventTicketRow(
+                id=r.id,
+                sequence_number=r.sequence_number,
+                created_at=r.created_at,
+                participant_name=r.participant_name or "",
+                participant_age=r.participant_age,
+                participant_church=r.participant_church or "",
+                user_id=r.user_id,
+                member_phone=u.phone if u else None,
+                member_gender=(u.gender or None) if u else None,
+                member_display_name=(u.display_name or None) if u else None,
+            )
+        )
+    return out
 
 
 @router.delete("/events/{event_id}", status_code=204)

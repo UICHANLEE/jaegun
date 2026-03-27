@@ -9,6 +9,18 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body class="admin-body">
+    <div id="admin-gate" class="admin-gate" role="dialog" aria-modal="true" aria-labelledby="admin-gate-title" hidden>
+      <div class="admin-gate-card card">
+        <h2 id="admin-gate-title">관리자 인증</h2>
+        <p class="hint">이 페이지를 쓰려면 서버 <code>.env</code>의 <code>ADMIN_TOKEN</code>과 같은 값이 필요합니다.</p>
+        <label>
+          관리자 토큰
+          <input id="gate-token-input" type="password" autocomplete="off" />
+        </label>
+        <button type="button" class="btn-issue" id="gate-submit">확인 후 계속</button>
+        <p id="gate-error" class="alert alert-error" role="alert" hidden></p>
+      </div>
+    </div>
     <header class="admin-top">
       <div class="admin-top-inner">
         <div>

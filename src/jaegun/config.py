@@ -17,6 +17,13 @@ class Settings(BaseSettings):
     jaegun_project_root: str | None = None
     # 하위 호환: 프로젝트 루트만 알 때(구 설정). project_root가 없을 때만 사용
     jaegun_static_root: str | None = None
+    # JWT (회원 로그인). 프로덕션에서 반드시 변경
+    jwt_secret: str = "change-me-in-production-use-long-random-string"
+    jwt_expire_minutes: int = 60 * 24 * 7
+    # Google 간편 로그인 (비우면 비활성). 콜백: {public_base_url}/api/auth/google/callback
+    google_oauth_client_id: str | None = None
+    google_oauth_client_secret: str | None = None
+    public_base_url: str = "http://127.0.0.1:8000"
 
 
 def get_settings() -> Settings:

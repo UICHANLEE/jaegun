@@ -426,3 +426,43 @@ code {
   font-size: 0.75rem;
   color: #71717a;
 }
+
+.admin-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--a-pad-x);
+  background: rgba(244, 244, 245, 0.97);
+  backdrop-filter: blur(6px);
+}
+
+.admin-gate[hidden] {
+  display: none !important;
+}
+
+.admin-gate-card {
+  width: 100%;
+  max-width: 22rem;
+}
+
+.admin-gate-card label {
+  display: block;
+  margin-top: 0.75rem;
+  font-size: 0.875rem;
+}
+
+.admin-gate-card input {
+  width: 100%;
+  margin-top: 0.35rem;
+  padding: 0.5rem 0.65rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--a-border);
+}
+
+.admin-gate-card .btn-issue {
+  width: 100%;
+  margin-top: 1rem;
+}

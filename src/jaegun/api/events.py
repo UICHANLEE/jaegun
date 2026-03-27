@@ -8,8 +8,9 @@ from pydantic import BaseModel, Field
 from sqlalchemy import func
 from sqlmodel import Session, select
 
+from jaegun.auth_jwt import get_current_user
 from jaegun.db import get_session
-from jaegun.models import Event, EventTicket
+from jaegun.models import Event, EventTicket, User
 
 router = APIRouter(prefix="/events", tags=["events"])
 
@@ -66,17 +67,45 @@ def list_events(
     status_code=201,
     summary="일정 참석·대기 번호 발급 (1부터 순번)",
 )
-def issue_event_ticket(event_id: UUID, session: Session = Depends(get_session)) -> EventTicketIssued:
+def issue_event_ticket(
+    event_id: UUID,
+    session: Session = Depends(get_session),
+    user: User = Depends(get_current_user),
+) -> EventTicketIssued:
     ev = session.get(Event, event_id)
     if ev is None:
         raise HTTPException(status_code=404, detail="일정을 찾을 수 없습니다.")
+    existing = session.exec(
+        select(EventTicket).where(
+            EventTicket.event_id == event_id,
+            EventTicket.user_id == user.id,
+        )
+    ).first()
+    if existing is not None:
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                f"이미 이 일정에서 번호를 받으셨습니다. (발급 번호: {existing.sequence_number}) "
+                "한 사람당 일정당 한 번만 발급됩니다."
+            ),
+        )
+    name = (user.display_name or "").strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="프로필에 이름(닉네임)을 먼저 등록해 주세요.")
     max_n = session.exec(
         select(func.coalesce(func.max(EventTicket.sequence_number), 0)).where(
             EventTicket.event_id == event_id
         )
     ).one()
     n = int(max_n) + 1
-    row = EventTicket(event_id=event_id, sequence_number=n)
+    row = EventTicket(
+        event_id=event_id,
+        user_id=user.id,
+        sequence_number=n,
+        participant_name=name,
+        participant_age=user.age,
+        participant_church=(user.church or "").strip(),
+    )
     session.add(row)
     session.commit()
     session.refresh(row)

@@ -22,6 +22,26 @@ class Announcement(SQLModel, table=True):
     created_at: datetime = Field(default_factory=utc_now)
 
 
+class User(SQLModel, table=True):
+    """회원 — 전화번호 로그인 또는 Google OAuth (phone 비우면 OAuth 전용)."""
+
+    __tablename__ = "user"
+    __table_args__ = (UniqueConstraint("oauth_provider", "oauth_sub", name="uq_user_oauth"),)
+
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    phone: str | None = Field(default=None, max_length=20, unique=True, index=True)
+    password_hash: str = Field(default="", max_length=256)
+    display_name: str = Field(max_length=100)
+    gender: str = Field(default="", max_length=20)
+    age: int | None = Field(default=None)
+    church: str = Field(default="", max_length=200)
+    phone_visibility: str = Field(default="admin_only", max_length=20)
+    avatar_path: str = Field(default="", max_length=500)
+    oauth_provider: str | None = Field(default=None, max_length=30)
+    oauth_sub: str | None = Field(default=None, max_length=255, index=True)
+    created_at: datetime = Field(default_factory=utc_now)
+
+
 class Event(SQLModel, table=True):
     __tablename__ = "event"
 
@@ -37,19 +57,37 @@ class Event(SQLModel, table=True):
 
 
 class EventTicket(SQLModel, table=True):
-    """일정별 참석·대기 번호(1부터 순번)."""
+    """일정별 참석 번호. 로그인 회원당 1회."""
 
     __tablename__ = "event_ticket"
     __table_args__ = (UniqueConstraint("event_id", "sequence_number", name="uq_event_ticket_seq"),)
 
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     event_id: UUID = Field(foreign_key="event.id", index=True)
+    user_id: UUID | None = Field(default=None, foreign_key="user.id", index=True)
     sequence_number: int = Field(ge=1, index=True)
+    participant_name: str = Field(default="", max_length=100)
+    participant_age: int | None = Field(default=None)
+    participant_church: str = Field(default="", max_length=200)
+    created_at: datetime = Field(default_factory=utc_now)
+
+
+class UserMeeting(SQLModel, table=True):
+    """회원이 만든 소모임·모임. 게시판 공유는 BoardPost.user_meeting_id 로 연결."""
+
+    __tablename__ = "user_meeting"
+
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    creator_id: UUID = Field(foreign_key="user.id", index=True)
+    title: str = Field(max_length=200)
+    body: str = ""
+    starts_at: datetime | None = Field(default=None)
+    location: str = Field(default="", max_length=300)
     created_at: datetime = Field(default_factory=utc_now)
 
 
 class BoardPost(SQLModel, table=True):
-    """사용자 게시판 글(공식 일정과 분리)."""
+    """사용자 게시판."""
 
     __tablename__ = "board_post"
 
@@ -57,12 +95,34 @@ class BoardPost(SQLModel, table=True):
     title: str = Field(max_length=200, index=True)
     body: str = ""
     author_name: str = Field(default="", max_length=100)
+    author_user_id: UUID | None = Field(default=None, foreign_key="user.id", index=True)
+    kind: str = Field(default="general", max_length=30)
+    user_meeting_id: UUID | None = Field(default=None, foreign_key="user_meeting.id", index=True)
+    created_at: datetime = Field(default_factory=utc_now)
+
+
+class FriendRequest(SQLModel, table=True):
+    __tablename__ = "friend_request"
+    __table_args__ = (UniqueConstraint("from_user_id", "to_user_id", name="uq_friend_request_pair"),)
+
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    from_user_id: UUID = Field(foreign_key="user.id", index=True)
+    to_user_id: UUID = Field(foreign_key="user.id", index=True)
+    status: str = Field(default="pending", max_length=20)
+    created_at: datetime = Field(default_factory=utc_now)
+
+
+class DirectMessage(SQLModel, table=True):
+    __tablename__ = "direct_message"
+
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    sender_id: UUID = Field(foreign_key="user.id", index=True)
+    recipient_id: UUID = Field(foreign_key="user.id", index=True)
+    body: str = Field(default="", max_length=4000)
     created_at: datetime = Field(default_factory=utc_now)
 
 
 class AnnualPlan(SQLModel, table=True):
-    """연도별 연간 계획 (연도당 1건)."""
-
     __tablename__ = "annual_plan"
 
     year: int = Field(primary_key=True)
@@ -72,8 +132,6 @@ class AnnualPlan(SQLModel, table=True):
 
 
 class MonthlyPlan(SQLModel, table=True):
-    """연·월별 월간 계획."""
-
     __tablename__ = "monthly_plan"
     __table_args__ = (UniqueConstraint("year", "month", name="uq_monthly_year_month"),)
 

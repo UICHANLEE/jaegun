@@ -40,13 +40,20 @@ def init_db() -> None:
         Announcement,
         AnnualPlan,
         BoardPost,
+        DirectMessage,
         Event,
         EventTicket,
+        FriendRequest,
         MonthlyPlan,
+        User,
+        UserMeeting,
     )
 
     SQLModel.metadata.create_all(engine)
     _migrate_sqlite_event_columns(engine)
+    _migrate_sqlite_event_ticket_columns(engine)
+    _migrate_sqlite_board_member_columns(engine)
+    _migrate_sqlite_event_ticket_user_unique(engine)
 
 
 def _migrate_sqlite_event_columns(engine) -> None:
@@ -66,6 +73,75 @@ def _migrate_sqlite_event_columns(engine) -> None:
             conn.exec_driver_sql(
                 "ALTER TABLE event ADD COLUMN survey_label VARCHAR(200) NOT NULL DEFAULT '참석 여부 설문조사'"
             )
+        conn.commit()
+
+
+def _migrate_sqlite_event_ticket_columns(engine) -> None:
+    """기존 SQLite DB event_ticket 에 참가자 정보 컬럼 추가."""
+
+    url = str(engine.url)
+    if not url.startswith("sqlite"):
+        return
+    with engine.connect() as conn:
+        t = conn.exec_driver_sql(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='event_ticket'"
+        ).fetchone()
+        if not t:
+            return
+        rows = conn.exec_driver_sql("PRAGMA table_info(event_ticket)").fetchall()
+        cols = {r[1] for r in rows}
+        if "participant_name" not in cols:
+            conn.exec_driver_sql(
+                "ALTER TABLE event_ticket ADD COLUMN participant_name VARCHAR(100) NOT NULL DEFAULT ''"
+            )
+        if "participant_age" not in cols:
+            conn.exec_driver_sql("ALTER TABLE event_ticket ADD COLUMN participant_age INTEGER")
+        if "participant_church" not in cols:
+            conn.exec_driver_sql(
+                "ALTER TABLE event_ticket ADD COLUMN participant_church VARCHAR(200) NOT NULL DEFAULT ''"
+            )
+        conn.commit()
+
+
+def _migrate_sqlite_board_member_columns(engine) -> None:
+    url = str(engine.url)
+    if not url.startswith("sqlite"):
+        return
+    with engine.connect() as conn:
+        t = conn.exec_driver_sql(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='board_post'"
+        ).fetchone()
+        if t:
+            rows = conn.exec_driver_sql("PRAGMA table_info(board_post)").fetchall()
+            cols = {r[1] for r in rows}
+            if "author_user_id" not in cols:
+                conn.exec_driver_sql("ALTER TABLE board_post ADD COLUMN author_user_id VARCHAR(36)")
+            if "kind" not in cols:
+                conn.exec_driver_sql(
+                    "ALTER TABLE board_post ADD COLUMN kind VARCHAR(30) NOT NULL DEFAULT 'general'"
+                )
+            if "user_meeting_id" not in cols:
+                conn.exec_driver_sql("ALTER TABLE board_post ADD COLUMN user_meeting_id VARCHAR(36)")
+        t2 = conn.exec_driver_sql(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='event_ticket'"
+        ).fetchone()
+        if t2:
+            rows = conn.exec_driver_sql("PRAGMA table_info(event_ticket)").fetchall()
+            cols = {r[1] for r in rows}
+            if "user_id" not in cols:
+                conn.exec_driver_sql("ALTER TABLE event_ticket ADD COLUMN user_id VARCHAR(36)")
+        conn.commit()
+
+
+def _migrate_sqlite_event_ticket_user_unique(engine) -> None:
+    url = str(engine.url)
+    if not url.startswith("sqlite"):
+        return
+    with engine.connect() as conn:
+        conn.exec_driver_sql(
+            "CREATE UNIQUE INDEX IF NOT EXISTS uq_event_ticket_event_user "
+            "ON event_ticket(event_id, user_id) WHERE user_id IS NOT NULL"
+        )
         conn.commit()
 
 

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>로그인 · Jaegun</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="community-root">
+      <header class="app-header">
+        <div class="header-inner">
+          <div>
+            <p class="eyebrow">Community</p>
+            <h1>로그인</h1>
+          </div>
+          <div class="header-links">
+            <a class="back-link" href="index.html">모임</a>
+            <a class="back-link" href="signup.html">회원가입</a>
+          </div>
+        </div>
+      </header>
+      <main style="padding: 0 1rem 2rem">
+        <div id="login-alert" class="alert" role="alert" hidden></div>
+        <form id="login-form" class="card compose" style="margin-top: 0.5rem">
+          <label class="modal-field">
+            전화번호
+            <input id="login-phone" type="tel" autocomplete="username" required />
+          </label>
+          <label class="modal-field">
+            비밀번호
+            <input id="login-password" type="password" autocomplete="current-password" required />
+          </label>
+          <button type="submit" class="btn-issue" style="margin-top: 1rem">로그인</button>
+        </form>
+        <p class="hint" style="margin: 1rem; line-height: 1.6">
+          <a href="/api/auth/google/start">Google로 간편 로그인</a>
+          (서버에 Google OAuth가 설정된 경우에만 동작합니다.)
+        </p>
+      </main>
+    </div>
+    <script src="login.js" defer></script>
+  </body>
+</html>

@@ -1,4 +1,9 @@
 const API = "";
+const ACCESS_TOKEN_KEY = "jaegun_access_token";
+
+function getAccessToken() {
+  return localStorage.getItem(ACCESS_TOKEN_KEY) || "";
+}
 
 function showAlert(msg) {
   const el = document.getElementById("alert");
@@ -30,12 +35,19 @@ function fmtDateOnly(iso) {
 }
 
 async function fetchJson(path, options = {}) {
+  const headers = { Accept: "application/json", ...options.headers };
+  const t = getAccessToken();
+  if (t) headers.Authorization = `Bearer ${t}`;
+  if (
+    options.body &&
+    !(options.body instanceof FormData) &&
+    !headers["Content-Type"]
+  ) {
+    headers["Content-Type"] = "application/json";
+  }
   const res = await fetch(`${API}${path}`, {
     ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...options.headers,
-    },
+    headers,
   });
   if (!res.ok) {
     let msg = await res.text();
@@ -48,7 +60,14 @@ async function fetchJson(path, options = {}) {
     throw new Error(msg || String(res.status));
   }
   if (res.status === 204) return null;
-  return res.json();
+  const text = await res.text();
+  return text ? JSON.parse(text) : null;
+}
+
+function refreshLoginHint() {
+  const h = document.getElementById("profile-hint");
+  if (!h) return;
+  h.hidden = !!getAccessToken();
 }
 
 let upcomingOnly = true;
@@ -177,6 +196,8 @@ async function openEventModal(eventId) {
     }
     document.getElementById("event-modal-ticket-result").hidden = true;
     document.getElementById("event-modal-ticket-result").textContent = "";
+    const needLogin = document.getElementById("event-modal-need-login");
+    if (needLogin) needLogin.hidden = !!getAccessToken();
     modal.hidden = false;
   } catch (e) {
     showAlert(e instanceof Error ? e.message : "일정을 불러오지 못했습니다.");
@@ -189,6 +210,10 @@ document.getElementById("event-modal")?.addEventListener("click", (e) => {
 
 document.getElementById("event-modal-issue-btn")?.addEventListener("click", async () => {
   if (!currentEventId) return;
+  if (!getAccessToken()) {
+    window.alert("번호 발급은 로그인 후에만 가능합니다. 회원가입 또는 로그인해 주세요.");
+    return;
+  }
   const btn = document.getElementById("event-modal-issue-btn");
   const out = document.getElementById("event-modal-ticket-result");
   btn.disabled = true;
@@ -196,12 +221,16 @@ document.getElementById("event-modal-issue-btn")?.addEventListener("click", asyn
   try {
     const r = await fetchJson(`/api/events/${currentEventId}/tickets`, {
       method: "POST",
-      body: "{}",
     });
     out.hidden = false;
     out.textContent = `발급 번호: ${r.sequence_number}`;
   } catch (e) {
-    showAlert(e instanceof Error ? e.message : "번호 발급에 실패했습니다.");
+    const msg = e instanceof Error ? e.message : "번호 발급에 실패했습니다.";
+    if (msg.includes("이미 이 일정에서 번호") || msg.includes("409")) {
+      window.alert(msg);
+    } else {
+      showAlert(msg);
+    }
   } finally {
     btn.disabled = false;
   }
@@ -251,6 +280,10 @@ function setTab(tab) {
   if (tab === "board") {
     void loadBoard();
   }
+  if (tab === "more") {
+    refreshLoginHint();
+    void loadSocialPanels();
+  }
 }
 
 async function loadBoard() {
@@ -271,9 +304,13 @@ async function loadBoard() {
         const li = document.createElement("li");
         li.className = "card";
         const author = p.author_name ? ` · ${escapeHtml(p.author_name)}` : "";
+        const kind =
+          p.kind === "user_meeting"
+            ? ` <span class="muted" style="font-size:0.75rem">(소모임 공유)</span>`
+            : "";
         li.innerHTML = `
           <div class="card-meta">${fmtDateTime(p.created_at)}${author}</div>
-          <h4>${escapeHtml(p.title)}</h4>
+          <h4>${escapeHtml(p.title)}${kind}</h4>
           ${p.body ? `<div class="card-body">${escapeHtml(p.body)}</div>` : ""}
         `;
         ul.appendChild(li);
@@ -450,4 +487,149 @@ document.getElementById("board-form").addEventListener("submit", async (e) => {
   }
 });
 
+async function loadSocialPanels() {
+  const inc = document.getElementById("incoming-friends");
+  const fl = document.getElementById("friends-list");
+  if (!inc || !fl) return;
+  if (!getAccessToken()) {
+    inc.innerHTML = "";
+    fl.innerHTML = '<p class="muted">로그인 후 친구·쪽지를 사용할 수 있습니다.</p>';
+    return;
+  }
+  try {
+    const incoming = await fetchJson("/api/friends/incoming");
+    if (!incoming.length) {
+      inc.innerHTML = '<p class="muted" style="margin:0">대기 중인 요청이 없습니다.</p>';
+    } else {
+      inc.innerHTML = incoming
+        .map(
+          (r) => `
+        <div class="card" style="padding:0.65rem;margin-bottom:0.5rem">
+          <strong>${escapeHtml(r.from_display_name || "회원")}</strong> 님이 친구 요청
+          <div style="margin-top:0.4rem;display:flex;gap:0.35rem">
+            <button type="button" class="event-detail-btn btn-accept-friend" data-req="${r.id}">수락</button>
+            <button type="button" class="event-detail-btn" style="background:#78716c" data-reject="${r.id}">거절</button>
+          </div>
+        </div>`
+        )
+        .join("");
+      inc.querySelectorAll(".btn-accept-friend").forEach((b) => {
+        b.addEventListener("click", async () => {
+          await fetchJson(`/api/friends/${b.getAttribute("data-req")}/accept`, { method: "POST" });
+          await loadSocialPanels();
+        });
+      });
+      inc.querySelectorAll("[data-reject]").forEach((b) => {
+        b.addEventListener("click", async () => {
+          await fetchJson(`/api/friends/${b.getAttribute("data-reject")}/reject`, { method: "POST" });
+          await loadSocialPanels();
+        });
+      });
+    }
+  } catch {
+    inc.innerHTML = '<p class="muted">요청 목록을 불러오지 못했습니다.</p>';
+  }
+  try {
+    const friends = await fetchJson("/api/friends");
+    if (!friends.length) {
+      fl.innerHTML = '<p class="muted" style="margin:0">아직 친한 친구가 없습니다. 전화번호로 요청해 보세요.</p>';
+    } else {
+      fl.innerHTML = friends
+        .map(
+          (u) => `
+        <div class="card" style="padding:0.65rem;margin-bottom:0.5rem">
+          <strong>${escapeHtml(u.display_name)}</strong>
+          <button type="button" class="event-detail-btn btn-msg-peer" style="margin-top:0.35rem" data-peer="${u.id}">쪽지 보내기</button>
+        </div>`
+        )
+        .join("");
+      fl.querySelectorAll(".btn-msg-peer").forEach((b) => {
+        b.addEventListener("click", () => openPeerChat(b.getAttribute("data-peer")));
+      });
+    }
+  } catch {
+    fl.innerHTML = '<p class="muted">친구 목록을 불러오지 못했습니다.</p>';
+  }
+}
+
+async function openPeerChat(peerId) {
+  if (!peerId || !getAccessToken()) return;
+  try {
+    const msgs = await fetchJson(`/api/messages/${peerId}?limit=50`);
+    const pid = String(peerId);
+    const lines = msgs.map((m) => `${String(m.sender_id) === pid ? "상대" : "나"}: ${m.body}`).join("\n");
+    window.alert(lines || "(아직 대화 없음)");
+  } catch (e) {
+    window.alert(e instanceof Error ? e.message : "대화를 불러오지 못했습니다.");
+    return;
+  }
+  const body = window.prompt("보낼 메시지를 입력하세요.");
+  if (body == null || !body.trim()) return;
+  try {
+    await fetchJson("/api/messages", {
+      method: "POST",
+      body: JSON.stringify({ to_user_id: String(peerId), body: body.trim() }),
+    });
+    window.alert("보냈습니다.");
+  } catch (e) {
+    window.alert(e instanceof Error ? e.message : "전송 실패");
+  }
+}
+
+document.getElementById("friend-request-btn")?.addEventListener("click", async () => {
+  const phone = document.getElementById("friend-phone")?.value?.trim();
+  if (!phone) {
+    showAlert("전화번호를 입력하세요.");
+    return;
+  }
+  hideAlert();
+  try {
+    await fetchJson(`/api/friends/request-by-phone?phone=${encodeURIComponent(phone)}`, {
+      method: "POST",
+    });
+    showAlert("친구 요청을 보냈습니다.");
+    document.getElementById("friend-phone").value = "";
+    await loadSocialPanels();
+  } catch (e) {
+    showAlert(e instanceof Error ? e.message : "요청 실패");
+  }
+});
+
+document.getElementById("meeting-form")?.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  if (!getAccessToken()) {
+    showAlert("로그인이 필요합니다.");
+    return;
+  }
+  const title = document.getElementById("meet-title").value.trim();
+  const body = document.getElementById("meet-body").value;
+  const starts = document.getElementById("meet-starts").value;
+  const location = document.getElementById("meet-loc").value.trim();
+  const share = document.getElementById("meet-share").checked;
+  if (!title) return;
+  hideAlert();
+  const btn = document.getElementById("meet-submit");
+  btn.disabled = true;
+  try {
+    const payload = {
+      title,
+      body,
+      location,
+      share_to_board: share,
+    };
+    if (starts) payload.starts_at = new Date(starts).toISOString();
+    await fetchJson("/api/meetings", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+    showAlert("소모임을 등록했습니다. 게시판 공유를 선택했다면 게시판 탭에서 확인할 수 있습니다.");
+    e.target.reset();
+  } catch (err) {
+    showAlert(err instanceof Error ? err.message : "등록 실패");
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+refreshLoginHint();
 loadFeed();

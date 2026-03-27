@@ -6,8 +6,9 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 from sqlmodel import Session, select
 
+from jaegun.auth_jwt import get_current_user_optional
 from jaegun.db import get_session
-from jaegun.models import BoardPost
+from jaegun.models import BoardPost, User
 
 router = APIRouter(prefix="/board", tags=["board"])
 
@@ -43,11 +44,20 @@ def get_post(post_id: UUID, session: Session = Depends(get_session)) -> BoardPos
 
 
 @router.post("/posts", response_model=BoardPost, status_code=201)
-def create_post(body: BoardPostCreate, session: Session = Depends(get_session)) -> BoardPost:
+def create_post(
+    body: BoardPostCreate,
+    session: Session = Depends(get_session),
+    user: User | None = Depends(get_current_user_optional),
+) -> BoardPost:
+    author_name = body.author_name.strip() if body.author_name else ""
+    if user and not author_name:
+        author_name = user.display_name or ""
     row = BoardPost(
         title=body.title,
         body=body.body,
-        author_name=body.author_name.strip() if body.author_name else "",
+        author_name=author_name,
+        author_user_id=user.id if user else None,
+        kind="general",
     )
     session.add(row)
     session.commit()

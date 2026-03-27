@@ -37,7 +37,15 @@ header.app-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 0.5rem;
   padding: 0.75rem 1rem;
+}
+
+.header-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+  justify-content: flex-end;
 }
 
 .header-inner h1 {
@@ -304,6 +312,44 @@ form.compose button:disabled {
 
 .nav-btn svg {
   stroke: currentColor;
+}
+
+.profile-hint {
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+}
+
+.profile-hint-text {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: rgb(68 64 60);
+}
+
+.profile-hint-text a {
+  font-weight: 600;
+  color: var(--comm-accent);
+}
+
+.modal-field {
+  display: block;
+  margin-top: 0.65rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: rgb(87 83 78);
+}
+
+.modal-field .req {
+  color: rgb(185 28 28);
+}
+
+.modal-field input {
+  margin-top: 0.25rem;
+  width: 100%;
+  border-radius: 0.65rem;
+  border: 1px solid rgb(214 211 209);
+  padding: 0.5rem 0.65rem;
+  font-size: 1rem;
 }
 
 .empty {

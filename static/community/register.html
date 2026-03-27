@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>내 프로필 · Jaegun</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="community-root">
+      <header class="app-header">
+        <div class="header-inner">
+          <div>
+            <p class="eyebrow">Community</p>
+            <h1>내 프로필</h1>
+          </div>
+          <div class="header-links">
+            <a class="back-link" href="index.html">모임</a>
+            <a class="back-link" href="login.html" id="prof-login-link">로그인</a>
+          </div>
+        </div>
+      </header>
+
+      <main style="padding: 0 1rem 2rem">
+        <div id="reg-alert" class="alert" role="alert" hidden></div>
+
+        <div id="prof-guest" class="card" hidden>
+          <p class="hint" style="line-height: 1.55">
+            로그인 후 프로필·사진·전화번호 공개 설정을 관리할 수 있습니다.
+          </p>
+          <a class="btn-issue" href="login.html" style="display: inline-block; margin-top: 0.75rem; text-decoration: none"
+            >로그인</a
+          >
+          <a
+            class="btn-issue"
+            href="signup.html"
+            style="
+              display: inline-block;
+              margin-top: 0.75rem;
+              margin-left: 0.5rem;
+              text-decoration: none;
+              background: #78716c;
+            "
+            >회원가입</a
+          >
+        </div>
+
+        <div id="prof-form-wrap" class="card" hidden style="margin-top: 0.5rem">
+          <div style="margin-bottom: 1rem">
+            <p class="hint" style="margin: 0 0 0.5rem">프로필 사진</p>
+            <img id="prof-avatar-preview" alt="" style="max-width: 120px; border-radius: 0.5rem; display: none" />
+            <label class="modal-field">
+              이미지 업로드 (3MB 이하)
+              <input id="prof-avatar" type="file" accept="image/*" />
+            </label>
+          </div>
+          <form id="register-form">
+            <label class="modal-field">
+              이름(표시명) <span class="req">*</span>
+              <input id="reg-name" type="text" maxlength="100" required autocomplete="name" />
+            </label>
+            <label class="modal-field">
+              성별
+              <select id="reg-gender">
+                <option value="">선택 안 함</option>
+                <option value="male">남</option>
+                <option value="female">여</option>
+                <option value="other">기타</option>
+              </select>
+            </label>
+            <label class="modal-field">
+              나이
+              <input id="reg-age" type="number" min="1" max="120" placeholder="선택" />
+            </label>
+            <label class="modal-field">
+              교회
+              <input id="reg-church" type="text" maxlength="200" />
+            </label>
+            <label class="modal-field">
+              전화번호 공개 범위
+              <select id="reg-visibility">
+                <option value="admin_only">관리자만</option>
+                <option value="friends_only">친한 친구에게만</option>
+                <option value="public">전체 공개</option>
+              </select>
+            </label>
+            <p class="hint" style="font-size: 0.8rem">전화번호·로그인 ID 변경은 고객센터를 이용해 주세요.</p>
+            <button type="submit" class="btn-issue" style="margin-top: 1rem">프로필 저장</button>
+          </form>
+          <button type="button" id="prof-logout" class="btn-issue" style="margin-top: 0.75rem; background: #78716c">
+            로그아웃
+          </button>
+        </div>
+      </main>
+    </div>
+    <script src="register.js" defer></script>
+  </body>
+</html>

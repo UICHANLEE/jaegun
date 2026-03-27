@@ -204,7 +204,21 @@ async function loadEvents() {
             return;
           }
           ul.innerHTML = tickets
-            .map((t) => `<li><strong>#${t.sequence_number}</strong> — ${formatDt(t.created_at)}</li>`)
+            .map((t) => {
+              const age =
+                t.participant_age != null && t.participant_age !== ""
+                  ? `${t.participant_age}세`
+                  : "—";
+              const ch = t.participant_church ? escapeHtml(t.participant_church) : "—";
+              const nm = t.participant_name ? escapeHtml(t.participant_name) : "(이름 없음)";
+              const phone = t.member_phone ? escapeHtml(String(t.member_phone)) : "—";
+              const gen = t.member_gender ? escapeHtml(t.member_gender) : "—";
+              const memNm = t.member_display_name ? escapeHtml(t.member_display_name) : "";
+              const memLine = t.user_id
+                ? `<br /><span class="item-meta">회원: ${memNm || "—"} · 전화 ${phone} · 성별 ${gen}</span>`
+                : "";
+              return `<li><strong>#${t.sequence_number}</strong> ${nm} · ${age} · ${ch}${memLine}<br /><span class="item-meta">${formatDt(t.created_at)}</span></li>`;
+            })
             .join("");
         } catch (e) {
           showAlert(e.message, true);
@@ -510,7 +524,16 @@ document.getElementById("mo-list-year").addEventListener("change", () => {
   loadMonthlyPlans();
 });
 
-function boot() {
+async function verifyAdminToken(token) {
+  const t = token.trim();
+  if (!t) return false;
+  const res = await fetch("/admin/verify", {
+    headers: { Authorization: `Bearer ${t}`, Accept: "application/json" },
+  });
+  return res.ok;
+}
+
+function finishBoot() {
   document.getElementById("admin-token").value = getToken();
   const y = new Date().getFullYear();
   document.getElementById("an-year").value = String(y);
@@ -519,6 +542,45 @@ function boot() {
   document.getElementById("mo-month").value = String(new Date().getMonth() + 1);
   initTabs();
   loadDashboard();
+}
+
+async function boot() {
+  const gate = document.getElementById("admin-gate");
+  const gateErr = document.getElementById("gate-error");
+  const gateInput = document.getElementById("gate-token-input");
+  const gateBtn = document.getElementById("gate-submit");
+
+  async function enterWith(tok) {
+    gateErr.hidden = true;
+    gateErr.textContent = "";
+    if (!(await verifyAdminToken(tok))) {
+      gate.hidden = false;
+      gateErr.textContent = "토큰이 올바르지 않거나 서버에서 거부되었습니다.";
+      gateErr.hidden = false;
+      setToken("");
+      return false;
+    }
+    setToken(tok.trim());
+    gate.hidden = true;
+    finishBoot();
+    return true;
+  }
+
+  gateBtn.addEventListener("click", () => enterWith(gateInput.value));
+
+  gateInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      enterWith(gateInput.value);
+    }
+  });
+
+  const existing = getToken().trim();
+  if (existing && (await enterWith(existing))) return;
+
+  gate.hidden = false;
+  gateInput.value = "";
+  gateInput.focus();
 }
 
 boot();
