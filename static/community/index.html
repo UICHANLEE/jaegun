@@ -2,24 +2,32 @@
 <html lang="ko">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="color-scheme" content="light" />
+    <meta name="theme-color" content="#3d5a4a" />
     <title>모임 · Jaegun</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <div class="community-root">
       <header class="app-header">
         <div class="header-inner">
-          <div>
-            <p class="eyebrow">Community</p>
-            <h1>모임</h1>
-          </div>
-          <div class="header-links">
-            <a class="back-link" href="login.html">로그인</a>
-            <a class="back-link" href="signup.html">가입</a>
-            <a class="back-link" href="register.html">프로필</a>
-            <a class="back-link" href="/">API</a>
+          <a href="index.html" class="brand-block">
+            <span class="brand-icon" aria-hidden="true"></span>
+            <div>
+              <p class="eyebrow">교회 공동체</p>
+              <h1 class="page-title">모임</h1>
+            </div>
+          </a>
+          <div class="header-actions">
+            <div id="header-auth" class="header-auth"></div>
+            <a class="header-api" href="/" title="API 안내">API</a>
           </div>
         </div>
       </header>
@@ -36,9 +44,11 @@
 
         <section id="panel-home" class="tab-panel">
           <div class="hero">
-            <p style="margin: 0; font-size: 0.875rem; color: rgb(204 251 241 / 0.9)">이번 주</p>
-            <h2>함께하는 공동체</h2>
-            <p>공식 공지·일정은 관리자만 등록합니다. 자유 글은 <strong>게시판</strong> 탭에서 작성하세요.</p>
+            <p class="hero-label">오늘의 안내</p>
+            <h2 class="hero-title">함께 걷는 교회</h2>
+            <p class="hero-lead">
+              공지와 일정은 공식 등록 글을 따르고, 나눔과 소식은 <strong>게시판</strong>에서 나눠 주세요.
+            </p>
           </div>
           <h3 class="section-title" style="margin-top: 1.25rem">공식 공지</h3>
           <p id="home-loading" class="loading">불러오는 중…</p>
@@ -130,18 +140,13 @@
           <div class="card" style="margin-top: 1rem">
             <h3 class="section-title" style="margin-top: 0">친한 친구</h3>
             <p class="hint">상대방도 수락하면 친한 친구가 되며, 그때부터 쪽지를 주고받을 수 있습니다.</p>
-            <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem; flex-wrap: wrap">
-              <input
-                id="friend-phone"
-                type="tel"
-                placeholder="상대 전화번호"
-                style="flex: 1; min-width: 10rem; padding: 0.5rem; border-radius: 0.5rem; border: 1px solid #d6d3d1"
-              />
-              <button type="button" id="friend-request-btn" class="event-detail-btn">요청 보내기</button>
+            <div class="friend-request-row">
+              <input id="friend-phone" class="input-inline" type="tel" placeholder="상대 전화번호" />
+              <button type="button" id="friend-request-btn" class="btn-secondary-inline">요청 보내기</button>
             </div>
-            <h4 style="font-size: 0.9rem; margin: 1rem 0 0.5rem">받은 요청</h4>
+            <h4 class="subsection-title">받은 요청</h4>
             <div id="incoming-friends"></div>
-            <h4 style="font-size: 0.9rem; margin: 1rem 0 0.5rem">내 친구</h4>
+            <h4 class="subsection-title">내 친구</h4>
             <div id="friends-list"></div>
           </div>
           <div class="card" style="margin-top: 1rem">
@@ -149,7 +154,7 @@
             <ul class="more-list">
               <li>
                 <span>프로필 · 사진</span>
-                <a href="register.html" class="muted" style="color: rgb(13 148 136); font-weight: 600">열기 →</a>
+                <a href="register.html">열기 →</a>
               </li>
               <li><span>기부 · 헌금</span><span class="muted">준비 중</span></li>
             </ul>
@@ -159,23 +164,7 @@
             <p class="hint">
               공식 공지·일정·계획 등록과 게시글 삭제는 <strong>/admin</strong> 페이지에서 <code>ADMIN_TOKEN</code>으로 진행합니다.
             </p>
-            <a
-              class="admin-portal-link"
-              href="/admin/"
-              style="
-                display: block;
-                margin-top: 0.75rem;
-                text-align: center;
-                padding: 0.65rem;
-                border-radius: 0.75rem;
-                background: #0f766e;
-                color: #fff;
-                font-weight: 600;
-                font-size: 0.875rem;
-                text-decoration: none;
-              "
-              >관리자 페이지 열기</a
-            >
+            <a class="btn-admin-link" href="/admin/">관리자 페이지 열기</a>
           </div>
         </section>
       </main>
@@ -262,6 +251,7 @@
       </div>
     </div>
 
+    <script src="auth-header.js" defer></script>
     <script src="app.js" defer></script>
   </body>
 </html>

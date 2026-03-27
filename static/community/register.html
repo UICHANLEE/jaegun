@@ -2,59 +2,56 @@
 <html lang="ko">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#3d5a4a" />
     <title>내 프로필 · Jaegun</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <div class="community-root">
+    <div class="community-root community-root--simple">
       <header class="app-header">
         <div class="header-inner">
-          <div>
-            <p class="eyebrow">Community</p>
-            <h1>내 프로필</h1>
-          </div>
-          <div class="header-links">
-            <a class="back-link" href="index.html">모임</a>
-            <a class="back-link" href="login.html" id="prof-login-link">로그인</a>
+          <a href="index.html" class="brand-block">
+            <span class="brand-icon" aria-hidden="true"></span>
+            <div>
+              <p class="eyebrow">교회 공동체</p>
+              <h1 class="page-title">내 프로필</h1>
+            </div>
+          </a>
+          <div class="header-actions">
+            <div id="header-auth" class="header-auth"></div>
+            <a class="header-api" href="/" title="API 안내">API</a>
           </div>
         </div>
       </header>
 
-      <main style="padding: 0 1rem 2rem">
+      <main class="page-main">
         <div id="reg-alert" class="alert" role="alert" hidden></div>
 
-        <div id="prof-guest" class="card" hidden>
-          <p class="hint" style="line-height: 1.55">
-            로그인 후 프로필·사진·전화번호 공개 설정을 관리할 수 있습니다.
-          </p>
-          <a class="btn-issue" href="login.html" style="display: inline-block; margin-top: 0.75rem; text-decoration: none"
-            >로그인</a
-          >
-          <a
-            class="btn-issue"
-            href="signup.html"
-            style="
-              display: inline-block;
-              margin-top: 0.75rem;
-              margin-left: 0.5rem;
-              text-decoration: none;
-              background: #78716c;
-            "
-            >회원가입</a
-          >
+        <div id="prof-guest" class="card card--elevated" hidden>
+          <p class="auth-intro">로그인하면 프로필·사진·전화번호 공개 설정을 관리할 수 있습니다.</p>
+          <div class="btn-row">
+            <a class="btn-primary btn-primary--inline" href="login.html">로그인</a>
+            <a class="btn-secondary btn-secondary--inline" href="signup.html">회원가입</a>
+          </div>
         </div>
 
-        <div id="prof-form-wrap" class="card" hidden style="margin-top: 0.5rem">
-          <div style="margin-bottom: 1rem">
-            <p class="hint" style="margin: 0 0 0.5rem">프로필 사진</p>
-            <img id="prof-avatar-preview" alt="" style="max-width: 120px; border-radius: 0.5rem; display: none" />
+        <div id="prof-form-wrap" class="card card--elevated" hidden>
+          <div class="avatar-block">
+            <p class="field-label">프로필 사진</p>
+            <img id="prof-avatar-preview" class="avatar-preview" alt="" width="120" height="120" hidden />
             <label class="modal-field">
               이미지 업로드 (3MB 이하)
               <input id="prof-avatar" type="file" accept="image/*" />
             </label>
           </div>
-          <form id="register-form">
+          <form id="register-form" class="compose">
             <label class="modal-field">
               이름(표시명) <span class="req">*</span>
               <input id="reg-name" type="text" maxlength="100" required autocomplete="name" />
@@ -84,15 +81,14 @@
                 <option value="public">전체 공개</option>
               </select>
             </label>
-            <p class="hint" style="font-size: 0.8rem">전화번호·로그인 ID 변경은 고객센터를 이용해 주세요.</p>
-            <button type="submit" class="btn-issue" style="margin-top: 1rem">프로필 저장</button>
+            <p class="hint hint--small">전화번호·로그인 ID 변경은 운영팀에 문의해 주세요.</p>
+            <button type="submit" class="btn-primary">프로필 저장</button>
           </form>
-          <button type="button" id="prof-logout" class="btn-issue" style="margin-top: 0.75rem; background: #78716c">
-            로그아웃
-          </button>
+          <button type="button" id="prof-logout" class="btn-secondary">로그아웃</button>
         </div>
       </main>
     </div>
+    <script src="auth-header.js" defer></script>
     <script src="register.js" defer></script>
   </body>
 </html>

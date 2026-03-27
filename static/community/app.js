@@ -68,6 +68,9 @@ function refreshLoginHint() {
   const h = document.getElementById("profile-hint");
   if (!h) return;
   h.hidden = !!getAccessToken();
+  if (typeof window.jaegunRefreshAuthHeader === "function") {
+    window.jaegunRefreshAuthHeader();
+  }
 }
 
 let upcomingOnly = true;

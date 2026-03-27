@@ -2,68 +2,81 @@
 <html lang="ko">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#3d5a4a" />
     <title>회원가입 · Jaegun</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <div class="community-root">
+    <div class="community-root community-root--simple">
       <header class="app-header">
         <div class="header-inner">
-          <div>
-            <p class="eyebrow">Community</p>
-            <h1>회원가입</h1>
-          </div>
-          <div class="header-links">
-            <a class="back-link" href="index.html">모임</a>
-            <a class="back-link" href="login.html">로그인</a>
+          <a href="index.html" class="brand-block">
+            <span class="brand-icon" aria-hidden="true"></span>
+            <div>
+              <p class="eyebrow">교회 공동체</p>
+              <h1 class="page-title">회원가입</h1>
+            </div>
+          </a>
+          <div class="header-actions">
+            <div id="header-auth" class="header-auth"></div>
+            <a class="header-api" href="/" title="API 안내">API</a>
           </div>
         </div>
       </header>
-      <main style="padding: 0 1rem 2rem">
+      <main class="page-main">
         <div id="signup-alert" class="alert" role="alert" hidden></div>
-        <form id="signup-form" class="card compose" style="margin-top: 0.5rem">
-          <label class="modal-field">
-            전화번호 (로그인 ID) <span class="req">*</span>
-            <input id="su-phone" type="tel" required autocomplete="tel" />
-          </label>
-          <label class="modal-field">
-            비밀번호 <span class="req">*</span>
-            <input id="su-password" type="password" autocomplete="new-password" required minlength="4" />
-          </label>
-          <label class="modal-field">
-            이름(표시명) <span class="req">*</span>
-            <input id="su-name" type="text" maxlength="100" required autocomplete="name" />
-          </label>
-          <label class="modal-field">
-            성별
-            <select id="su-gender">
-              <option value="">선택 안 함</option>
-              <option value="male">남</option>
-              <option value="female">여</option>
-              <option value="other">기타</option>
-            </select>
-          </label>
-          <label class="modal-field">
-            나이
-            <input id="su-age" type="number" min="1" max="120" placeholder="선택" />
-          </label>
-          <label class="modal-field">
-            교회 (선택)
-            <input id="su-church" type="text" maxlength="200" />
-          </label>
-          <label class="modal-field">
-            전화번호 공개 범위
-            <select id="su-visibility">
-              <option value="admin_only">관리자만</option>
-              <option value="friends_only">친한 친구에게만</option>
-              <option value="public">전체 공개</option>
-            </select>
-          </label>
-          <button type="submit" class="btn-issue" style="margin-top: 1rem">가입</button>
-        </form>
+        <div class="card card--elevated">
+          <form id="signup-form" class="compose compose--auth">
+            <label class="modal-field">
+              전화번호 (로그인 ID) <span class="req">*</span>
+              <input id="su-phone" type="tel" required autocomplete="tel" inputmode="tel" />
+            </label>
+            <label class="modal-field">
+              비밀번호 <span class="req">*</span>
+              <input id="su-password" type="password" autocomplete="new-password" required minlength="4" />
+            </label>
+            <label class="modal-field">
+              이름(표시명) <span class="req">*</span>
+              <input id="su-name" type="text" maxlength="100" required autocomplete="name" />
+            </label>
+            <label class="modal-field">
+              성별
+              <select id="su-gender">
+                <option value="">선택 안 함</option>
+                <option value="male">남</option>
+                <option value="female">여</option>
+                <option value="other">기타</option>
+              </select>
+            </label>
+            <label class="modal-field">
+              나이
+              <input id="su-age" type="number" min="1" max="120" placeholder="선택" />
+            </label>
+            <label class="modal-field">
+              교회 (선택)
+              <input id="su-church" type="text" maxlength="200" />
+            </label>
+            <label class="modal-field">
+              전화번호 공개 범위
+              <select id="su-visibility">
+                <option value="admin_only">관리자만</option>
+                <option value="friends_only">친한 친구에게만</option>
+                <option value="public">전체 공개</option>
+              </select>
+            </label>
+            <button type="submit" class="btn-primary">가입하고 시작하기</button>
+          </form>
+        </div>
       </main>
     </div>
+    <script src="auth-header.js" defer></script>
     <script src="signup.js" defer></script>
   </body>
 </html>

@@ -2,43 +2,58 @@
 <html lang="ko">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#3d5a4a" />
     <title>로그인 · Jaegun</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <div class="community-root">
+    <div class="community-root community-root--simple">
       <header class="app-header">
         <div class="header-inner">
-          <div>
-            <p class="eyebrow">Community</p>
-            <h1>로그인</h1>
-          </div>
-          <div class="header-links">
-            <a class="back-link" href="index.html">모임</a>
-            <a class="back-link" href="signup.html">회원가입</a>
+          <a href="index.html" class="brand-block">
+            <span class="brand-icon" aria-hidden="true"></span>
+            <div>
+              <p class="eyebrow">교회 공동체</p>
+              <h1 class="page-title">로그인</h1>
+            </div>
+          </a>
+          <div class="header-actions">
+            <div id="header-auth" class="header-auth"></div>
+            <a class="header-api" href="/" title="API 안내">API</a>
           </div>
         </div>
       </header>
-      <main style="padding: 0 1rem 2rem">
+      <main class="page-main">
         <div id="login-alert" class="alert" role="alert" hidden></div>
-        <form id="login-form" class="card compose" style="margin-top: 0.5rem">
-          <label class="modal-field">
-            전화번호
-            <input id="login-phone" type="tel" autocomplete="username" required />
-          </label>
-          <label class="modal-field">
-            비밀번호
-            <input id="login-password" type="password" autocomplete="current-password" required />
-          </label>
-          <button type="submit" class="btn-issue" style="margin-top: 1rem">로그인</button>
-        </form>
-        <p class="hint" style="margin: 1rem; line-height: 1.6">
-          <a href="/api/auth/google/start">Google로 간편 로그인</a>
-          (서버에 Google OAuth가 설정된 경우에만 동작합니다.)
-        </p>
+        <div class="auth-card card card--elevated">
+          <p class="auth-intro">가입하신 전화번호와 비밀번호로 들어올 수 있습니다.</p>
+          <form id="login-form" class="compose compose--auth">
+            <label class="modal-field">
+              전화번호
+              <input id="login-phone" type="tel" autocomplete="username" required inputmode="tel" />
+            </label>
+            <label class="modal-field">
+              비밀번호
+              <input id="login-password" type="password" autocomplete="current-password" required />
+            </label>
+            <button type="submit" class="btn-primary">로그인</button>
+          </form>
+          <a class="oauth-btn" href="/api/auth/google/start">
+            <span class="oauth-btn__icon" aria-hidden="true">G</span>
+            Google로 계속하기
+          </a>
+          <p class="auth-footnote">Google 로그인은 서버에 OAuth 설정이 있을 때만 동작합니다.</p>
+        </div>
       </main>
     </div>
+    <script src="auth-header.js" defer></script>
     <script src="login.js" defer></script>
   </body>
 </html>
