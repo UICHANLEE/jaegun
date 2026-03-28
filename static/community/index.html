@@ -50,6 +50,17 @@
               공지와 일정은 공식 등록 글을 따르고, 나눔과 소식은 <strong>게시판</strong>에서 나눠 주세요.
             </p>
           </div>
+          <section class="card big-meeting-card" aria-labelledby="big-meeting-heading">
+            <h3 id="big-meeting-heading" class="big-meeting-title">큰모임</h3>
+            <p class="big-meeting-desc">아래 버튼으로 참석 순번을 받으세요. 순번은 전체 인원 기준으로 올라갑니다.</p>
+            <div class="big-meeting-counter-wrap">
+              <span class="big-meeting-counter-label">현재까지 부여된 번호</span>
+              <div id="big-meeting-counter" class="big-meeting-counter" aria-live="polite">0</div>
+            </div>
+            <button type="button" id="big-meeting-btn" class="btn-primary big-meeting-btn">큰모임 · 번호 받기</button>
+            <p id="big-meeting-hint" class="big-meeting-hint muted" hidden></p>
+            <p id="big-meeting-result" class="big-meeting-result" hidden role="status"></p>
+          </section>
           <h3 class="section-title" style="margin-top: 1.25rem">공식 공지</h3>
           <p id="home-loading" class="loading">불러오는 중…</p>
           <ul id="announcement-list" class="card-list" hidden></ul>

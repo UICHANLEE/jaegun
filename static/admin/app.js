@@ -102,7 +102,17 @@ async function loadDashboard() {
     } catch {
       monthlyCount = 0;
     }
-    summary.textContent = `공지 ${ann.length}건 · 일정 ${ev.length}건 · 게시글 ${posts.length}건 · 연간 계획 ${annual.length}년 · 올해(${y}) 월간 ${monthlyCount}건`;
+    let bmText = "";
+    try {
+      const tok = getToken().trim();
+      if (tok) {
+        const bm = await fetchAdmin("/admin/big-meeting/tickets");
+        bmText = ` · 큰모임 번호 ${Array.isArray(bm) ? bm.length : 0}명`;
+      }
+    } catch {
+      /* 토큰 없으면 생략 */
+    }
+    summary.textContent = `공지 ${ann.length}건 · 일정 ${ev.length}건 · 게시글 ${posts.length}건 · 연간 계획 ${annual.length}년 · 올해(${y}) 월간 ${monthlyCount}건${bmText}`;
   } catch (e) {
     summary.textContent = `불러오기 실패: ${e.message}`;
   }
@@ -342,6 +352,70 @@ async function loadMonthlyPlans() {
   }
 }
 
+async function loadBigMeetingTickets() {
+  const loading = document.getElementById("bigmeet-loading");
+  const list = document.getElementById("bigmeet-list");
+  const empty = document.getElementById("bigmeet-empty");
+  if (!loading || !list) return;
+  loading.textContent = "불러오는 중…";
+  loading.hidden = false;
+  list.hidden = true;
+  empty.hidden = true;
+  try {
+    const tickets = await fetchAdmin("/admin/big-meeting/tickets");
+    loading.hidden = true;
+    if (!tickets.length) {
+      empty.hidden = false;
+      return;
+    }
+    list.hidden = false;
+    list.innerHTML = tickets
+      .map((t) => {
+        const age =
+          t.participant_age != null && t.participant_age !== ""
+            ? `${t.participant_age}세`
+            : "—";
+        const ch = t.participant_church ? escapeHtml(t.participant_church) : "—";
+        const nm = t.participant_name ? escapeHtml(t.participant_name) : "(이름 없음)";
+        const phone = t.member_phone ? escapeHtml(String(t.member_phone)) : "—";
+        const gen = t.member_gender ? escapeHtml(t.member_gender) : "—";
+        const memNm = t.member_display_name ? escapeHtml(t.member_display_name) : "";
+        const memLine = t.user_id
+          ? `<span class="item-meta">회원 ${memNm || "—"} · 전화 ${phone} · 성별 ${gen}</span>`
+          : "";
+        return `<li class="item-row" style="flex-wrap:wrap">
+          <div class="item-main" style="min-width:12rem;flex:1">
+            <strong>#${t.sequence_number}</strong> ${nm} · ${age} · 교회 ${ch}
+            ${memLine ? `<br />${memLine}` : ""}
+            <br /><span class="item-meta">${formatDt(t.created_at)}</span>
+          </div>
+        </li>`;
+      })
+      .join("");
+  } catch (e) {
+    loading.textContent = `오류: ${e.message}`;
+  }
+}
+
+document.getElementById("bigmeet-refresh")?.addEventListener("click", () => loadBigMeetingTickets());
+
+document.getElementById("bigmeet-clear")?.addEventListener("click", async () => {
+  if (
+    !confirm(
+      "큰모임 번호를 모두 지울까요? 이 작업은 되돌릴 수 없습니다. 다음 행사 전에만 사용하세요."
+    )
+  )
+    return;
+  try {
+    await fetchAdmin("/admin/big-meeting/tickets", { method: "DELETE" });
+    showAlert("초기화했습니다.", false);
+    loadBigMeetingTickets();
+    loadDashboard();
+  } catch (e) {
+    showAlert(e.message, true);
+  }
+});
+
 async function loadBoard() {
   const loading = document.getElementById("board-loading");
   const list = document.getElementById("board-list");
@@ -405,6 +479,7 @@ function switchTab(tab) {
     loadMonthlyPlans();
   }
   if (tab === "board") loadBoard();
+  if (tab === "bigmeet") loadBigMeetingTickets();
 }
 
 function initTabs() {

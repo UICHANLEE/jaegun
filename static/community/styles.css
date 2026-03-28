@@ -1139,6 +1139,75 @@ form.compose > button[type="submit"]:disabled,
   border: 1px solid rgb(44 40 36 / 0.06) !important;
 }
 
+/* 큰모임 카드 */
+.big-meeting-card {
+  margin-top: 0.5rem;
+  border: 1px solid rgb(154 123 79 / 0.22);
+  background: linear-gradient(165deg, #fffdf9 0%, var(--gold-soft) 55%, var(--surface) 100%);
+  box-shadow: var(--shadow-md);
+}
+
+.big-meeting-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.big-meeting-desc {
+  margin: 0.5rem 0 0;
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: var(--ink-muted);
+}
+
+.big-meeting-counter-wrap {
+  margin: 1rem 0 0.25rem;
+  text-align: center;
+}
+
+.big-meeting-counter-label {
+  display: block;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+.big-meeting-counter {
+  margin: 0.35rem 0 0;
+  font-family: var(--font-display);
+  font-size: clamp(2.5rem, 12vw, 3.25rem);
+  font-weight: 700;
+  line-height: 1;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.big-meeting-btn {
+  margin-top: 1rem;
+}
+
+.big-meeting-hint {
+  margin: 0.65rem 0 0;
+  text-align: center;
+  line-height: 1.45;
+}
+
+.big-meeting-result {
+  margin: 0.85rem 0 0;
+  padding: 0.85rem 1rem;
+  border-radius: var(--radius);
+  text-align: center;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-border);
+}
+
 @media (min-width: 480px) {
   .header-inner,
   main:not(.page-main),

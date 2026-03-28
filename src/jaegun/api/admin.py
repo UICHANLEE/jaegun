@@ -16,7 +16,16 @@ from jaegun.api.plans import (
     MonthlyPatch,
 )
 from jaegun.db import get_session
-from jaegun.models import Announcement, AnnualPlan, BoardPost, Event, EventTicket, MonthlyPlan, User
+from jaegun.models import (
+    Announcement,
+    AnnualPlan,
+    BigMeetingTicket,
+    BoardPost,
+    Event,
+    EventTicket,
+    MonthlyPlan,
+    User,
+)
 from jaegun.security import require_admin
 
 router = APIRouter(
@@ -166,6 +175,43 @@ def admin_delete_event(event_id: UUID, session: Session = Depends(get_session)) 
     for t in session.exec(select(EventTicket).where(EventTicket.event_id == event_id)).all():
         session.delete(t)
     session.delete(row)
+    session.commit()
+
+
+# --- 큰모임 순번 ---
+
+
+@router.get("/big-meeting/tickets", response_model=list[EventTicketRow])
+def admin_list_big_meeting_tickets(
+    session: Session = Depends(get_session),
+) -> list[EventTicketRow]:
+    rows = session.exec(
+        select(BigMeetingTicket).order_by(BigMeetingTicket.sequence_number.asc())
+    ).all()
+    out: list[EventTicketRow] = []
+    for r in rows:
+        u = session.get(User, r.user_id)
+        out.append(
+            EventTicketRow(
+                id=r.id,
+                sequence_number=r.sequence_number,
+                created_at=r.created_at,
+                participant_name=r.participant_name or "",
+                participant_age=r.participant_age,
+                participant_church=r.participant_church or "",
+                user_id=r.user_id,
+                member_phone=u.phone if u else None,
+                member_gender=(u.gender or None) if u else None,
+                member_display_name=(u.display_name or None) if u else None,
+            )
+        )
+    return out
+
+
+@router.delete("/big-meeting/tickets", status_code=204)
+def admin_clear_big_meeting_tickets(session: Session = Depends(get_session)) -> None:
+    for t in session.exec(select(BigMeetingTicket)).all():
+        session.delete(t)
     session.commit()
 
 

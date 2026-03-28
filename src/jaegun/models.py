@@ -72,6 +72,21 @@ class EventTicket(SQLModel, table=True):
     created_at: datetime = Field(default_factory=utc_now)
 
 
+class BigMeetingTicket(SQLModel, table=True):
+    """큰모임 참석 순번. 회원당 1회, 전역 순번 증가."""
+
+    __tablename__ = "big_meeting_ticket"
+    __table_args__ = (UniqueConstraint("sequence_number", name="uq_big_meeting_seq"),)
+
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    user_id: UUID = Field(foreign_key="user.id", unique=True, index=True)
+    sequence_number: int = Field(ge=1, index=True)
+    participant_name: str = Field(default="", max_length=100)
+    participant_age: int | None = Field(default=None)
+    participant_church: str = Field(default="", max_length=200)
+    created_at: datetime = Field(default_factory=utc_now)
+
+
 class UserMeeting(SQLModel, table=True):
     """회원이 만든 소모임·모임. 게시판 공유는 BoardPost.user_meeting_id 로 연결."""
 

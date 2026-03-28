@@ -40,6 +40,7 @@
         <button type="button" class="tab-btn" data-tab="events">일정</button>
         <button type="button" class="tab-btn" data-tab="plans">계획</button>
         <button type="button" class="tab-btn" data-tab="board">게시판</button>
+        <button type="button" class="tab-btn" data-tab="bigmeet">큰모임</button>
       </nav>
     </header>
 
@@ -171,6 +172,20 @@
             <p id="monthly-loading" class="muted">불러오는 중…</p>
             <ul id="monthly-list" class="item-list tight" hidden></ul>
             <p id="monthly-empty" class="muted" hidden>해당 연도에 월간 계획이 없습니다.</p>
+          </div>
+        </section>
+
+        <section id="panel-bigmeet" class="panel" hidden>
+          <div class="card">
+            <h2>큰모임 순번</h2>
+            <p class="hint">참석자가 앱에서 받은 번호와 프로필·연락처를 확인할 수 있습니다. 새 행사 전에만 초기화하세요.</p>
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.75rem">
+              <button type="button" class="btn-secondary btn-small" id="bigmeet-refresh">목록 새로고침</button>
+              <button type="button" class="btn-danger btn-small" id="bigmeet-clear">전체 초기화…</button>
+            </div>
+            <p id="bigmeet-loading" class="muted">불러오는 중…</p>
+            <ul id="bigmeet-list" class="item-list" hidden></ul>
+            <p id="bigmeet-empty" class="muted" hidden>아직 부여된 번호가 없습니다.</p>
           </div>
         </section>
 

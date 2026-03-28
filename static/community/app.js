@@ -75,6 +75,67 @@ function refreshLoginHint() {
 
 let upcomingOnly = true;
 
+function animateCounter(el, from, to, durationMs) {
+  if (!el || from === to) {
+    if (el) el.textContent = String(to);
+    return;
+  }
+  const start = performance.now();
+  const ease = (t) => 1 - (1 - t) ** 3;
+  const step = (now) => {
+    const p = Math.min(1, (now - start) / durationMs);
+    el.textContent = String(Math.round(from + (to - from) * ease(p)));
+    if (p < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+
+function renderBigMeetingStatus(status) {
+  const counter = document.getElementById("big-meeting-counter");
+  const hint = document.getElementById("big-meeting-hint");
+  const result = document.getElementById("big-meeting-result");
+  const btn = document.getElementById("big-meeting-btn");
+  if (!counter) return;
+  const target = Number(status?.issued_count) || 0;
+  const prev = parseInt(counter.textContent, 10);
+  const from = Number.isFinite(prev) ? prev : 0;
+  animateCounter(counter, from, target, Math.min(900, 120 + Math.abs(target - from) * 25));
+
+  if (hint) {
+    if (!getAccessToken()) {
+      hint.hidden = false;
+      hint.textContent = "로그인 후 번호를 받을 수 있습니다.";
+    } else if (status?.my_number != null) {
+      hint.hidden = false;
+      hint.textContent = `이미 부여된 번호가 있습니다.`;
+    } else {
+      hint.hidden = false;
+      hint.textContent = "한 번만 눌러 주세요. 순번이 카운트됩니다.";
+    }
+  }
+  if (result) {
+    if (status?.my_number != null) {
+      result.hidden = false;
+      result.textContent = `내 번호: ${status.my_number}번`;
+    } else {
+      result.hidden = true;
+      result.textContent = "";
+    }
+  }
+  if (btn) {
+    btn.disabled = !getAccessToken() || status?.my_number != null;
+  }
+}
+
+async function loadBigMeetingStatusOnly() {
+  try {
+    const status = await fetchJson("/api/big-meeting/status");
+    renderBigMeetingStatus(status);
+  } catch {
+    renderBigMeetingStatus({ issued_count: 0, my_number: null });
+  }
+}
+
 async function loadFeed() {
   hideAlert();
   document.getElementById("home-loading").hidden = false;
@@ -85,10 +146,13 @@ async function loadFeed() {
   document.getElementById("event-empty").hidden = true;
 
   try {
-    const [announcements, events] = await Promise.all([
+    const [announcements, events, bmStatus] = await Promise.all([
       fetchJson("/api/announcements"),
       fetchJson(`/api/events?upcoming_only=${upcomingOnly ? "true" : "false"}`),
+      fetchJson("/api/big-meeting/status").catch(() => ({ issued_count: 0, my_number: null })),
     ]);
+
+    renderBigMeetingStatus(bmStatus);
 
     document.getElementById("home-loading").hidden = true;
     const ul = document.getElementById("announcement-list");
@@ -277,6 +341,9 @@ function setTab(tab) {
     if (active) b.setAttribute("aria-current", "page");
     else b.removeAttribute("aria-current");
   });
+  if (tab === "home") {
+    void loadBigMeetingStatusOnly();
+  }
   if (tab === "plans") {
     void loadPlans();
   }
@@ -631,6 +698,47 @@ document.getElementById("meeting-form")?.addEventListener("submit", async (e) =>
     showAlert(err instanceof Error ? err.message : "등록 실패");
   } finally {
     btn.disabled = false;
+  }
+});
+
+document.getElementById("big-meeting-btn")?.addEventListener("click", async () => {
+  if (!getAccessToken()) {
+    window.alert("로그인 후 큰모임 번호를 받을 수 있습니다.");
+    return;
+  }
+  const btn = document.getElementById("big-meeting-btn");
+  if (btn?.disabled) return;
+  btn.disabled = true;
+  hideAlert();
+  try {
+    const r = await fetchJson("/api/big-meeting/claim", { method: "POST" });
+    const counter = document.getElementById("big-meeting-counter");
+    const prev = parseInt(counter?.textContent || "0", 10) || 0;
+    animateCounter(counter, prev, r.issued_count, 500);
+    const result = document.getElementById("big-meeting-result");
+    if (result) {
+      result.hidden = false;
+      result.textContent = `내 번호: ${r.sequence_number}번 — 잘 챙겨 두세요.`;
+    }
+    const hint = document.getElementById("big-meeting-hint");
+    if (hint) {
+      hint.hidden = false;
+      hint.textContent = "번호를 받으셨습니다.";
+    }
+    renderBigMeetingStatus({ issued_count: r.issued_count, my_number: r.sequence_number });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "처리하지 못했습니다.";
+    if (msg.includes("이미 큰모임") || msg.includes("409")) {
+      window.alert(msg);
+    } else {
+      showAlert(msg);
+    }
+    await loadBigMeetingStatusOnly();
+  } finally {
+    const btn2 = document.getElementById("big-meeting-btn");
+    const resEl = document.getElementById("big-meeting-result");
+    const hasNum = resEl && !resEl.hidden;
+    if (btn2 && !hasNum && getAccessToken()) btn2.disabled = false;
   }
 });
 

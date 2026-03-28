@@ -39,6 +39,7 @@ def init_db() -> None:
     from jaegun.models import (  # noqa: F401
         Announcement,
         AnnualPlan,
+        BigMeetingTicket,
         BoardPost,
         DirectMessage,
         Event,

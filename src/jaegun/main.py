@@ -10,7 +10,7 @@ from fastapi.staticfiles import StaticFiles
 
 from sqlmodel import Session
 
-from jaegun.api import admin, announcements, auth_api, board, events, meetings, member, plans
+from jaegun.api import admin, announcements, auth_api, big_meeting, board, events, meetings, member, plans
 from jaegun.config import get_project_root, get_settings
 from jaegun.db import engine, init_db, seed_if_empty
 from jaegun.security import require_admin
@@ -87,6 +87,7 @@ def create_app() -> FastAPI:
     app.include_router(auth_api.router, prefix="/api")
     app.include_router(member.router, prefix="/api")
     app.include_router(meetings.router, prefix="/api")
+    app.include_router(big_meeting.router, prefix="/api")
     app.include_router(board.router, prefix="/api")
     app.include_router(events.router, prefix="/api")
     app.include_router(plans.router, prefix="/api")
