@@ -40,6 +40,7 @@
         <button type="button" class="tab-btn" data-tab="events">일정</button>
         <button type="button" class="tab-btn" data-tab="plans">계획</button>
         <button type="button" class="tab-btn" data-tab="board">게시판</button>
+        <button type="button" class="tab-btn" data-tab="orgdel">공동체 삭제</button>
         <button type="button" class="tab-btn" data-tab="bigmeet">큰모임</button>
       </nav>
     </header>
@@ -74,6 +75,12 @@
             <h2>공식 공지 등록</h2>
             <form id="form-announce">
               <label>제목 <input id="a-title" type="text" maxlength="200" required /></label>
+              <label
+                >공동체 (선택)
+                <select id="a-org">
+                  <option value="">전체 공지 (소속 없음)</option>
+                </select></label
+              >
               <label>내용 <textarea id="a-body"></textarea></label>
               <button type="submit">등록</button>
             </form>
@@ -111,6 +118,12 @@
                   maxlength="200"
                   placeholder="참석 여부 설문조사"
                 /></label
+              >
+              <label
+                >공동체 (선택)
+                <select id="e-org">
+                  <option value="">전체 일정 (소속 없음)</option>
+                </select></label
               >
               <button type="submit">등록</button>
             </form>
@@ -192,10 +205,21 @@
         <section id="panel-board" class="panel" hidden>
           <div class="card">
             <h2>게시판 글</h2>
-            <p class="hint">삭제 시 복구할 수 없습니다.</p>
+            <p class="hint">목록은 관리자 전용 상세 API로 불러옵니다. 익명 글의 실제 작성자를 확인할 수 있습니다. 삭제 시 복구할 수 없습니다.</p>
             <p id="board-loading" class="muted">불러오는 중…</p>
             <ul id="board-list" class="item-list" hidden></ul>
             <p id="board-empty" class="muted" hidden>글이 없습니다.</p>
+          </div>
+        </section>
+
+        <section id="panel-orgdel" class="panel" hidden>
+          <div class="card">
+            <h2>공동체 삭제 신청</h2>
+            <p class="hint">공동체 관리자가 신청하면 여기 대기 목록에 표시됩니다. 승인 시 해당 공동체와 하위 트리가 비활성화(soft delete)됩니다.</p>
+            <button type="button" class="btn-secondary btn-small" id="orgdel-refresh">목록 새로고침</button>
+            <p id="orgdel-loading" class="muted" style="margin-top: 0.75rem">불러오는 중…</p>
+            <ul id="orgdel-list" class="item-list" hidden></ul>
+            <p id="orgdel-empty" class="muted" hidden>대기 중인 삭제 신청이 없습니다.</p>
           </div>
         </section>
       </main>

@@ -46,6 +46,9 @@ def init_db() -> None:
         EventTicket,
         FriendRequest,
         MonthlyPlan,
+        OrgDeletionRequest,
+        Organization,
+        OrgMembership,
         User,
         UserMeeting,
     )
@@ -55,6 +58,7 @@ def init_db() -> None:
     _migrate_sqlite_event_ticket_columns(engine)
     _migrate_sqlite_board_member_columns(engine)
     _migrate_sqlite_event_ticket_user_unique(engine)
+    _migrate_sqlite_org_scope_and_anon(engine)
 
 
 def _migrate_sqlite_event_columns(engine) -> None:
@@ -143,6 +147,56 @@ def _migrate_sqlite_event_ticket_user_unique(engine) -> None:
             "CREATE UNIQUE INDEX IF NOT EXISTS uq_event_ticket_event_user "
             "ON event_ticket(event_id, user_id) WHERE user_id IS NOT NULL"
         )
+        conn.commit()
+
+
+def _migrate_sqlite_org_scope_and_anon(engine) -> None:
+    url = str(engine.url)
+    if not url.startswith("sqlite"):
+        return
+    with engine.connect() as conn:
+        for table, cols in (
+            (
+                "event",
+                [
+                    (
+                        "organization_id",
+                        "ALTER TABLE event ADD COLUMN organization_id VARCHAR(36)",
+                    ),
+                ],
+            ),
+            (
+                "announcement",
+                [
+                    (
+                        "organization_id",
+                        "ALTER TABLE announcement ADD COLUMN organization_id VARCHAR(36)",
+                    ),
+                ],
+            ),
+            (
+                "board_post",
+                [
+                    (
+                        "is_anonymous",
+                        "ALTER TABLE board_post ADD COLUMN is_anonymous BOOLEAN NOT NULL DEFAULT 0",
+                    ),
+                    (
+                        "anonymous_handle",
+                        "ALTER TABLE board_post ADD COLUMN anonymous_handle VARCHAR(50) NOT NULL DEFAULT ''",
+                    ),
+                ],
+            ),
+        ):
+            t = conn.exec_driver_sql(
+                f"SELECT name FROM sqlite_master WHERE type='table' AND name='{table}'"
+            ).fetchone()
+            if not t:
+                continue
+            existing = {r[1] for r in conn.exec_driver_sql(f"PRAGMA table_info({table})").fetchall()}
+            for col_name, ddl in cols:
+                if col_name not in existing:
+                    conn.exec_driver_sql(ddl)
         conn.commit()
 
 

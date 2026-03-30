@@ -5,7 +5,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
-from sqlalchemy import func
+from sqlalchemy import false, func, or_
 from sqlmodel import Session, select
 
 from jaegun.auth_jwt import get_current_user
@@ -23,6 +23,7 @@ class EventCreate(BaseModel):
     location: str = Field(default="", max_length=300)
     survey_url: str = Field(default="", max_length=2000)
     survey_label: str = Field(default="참석 여부 설문조사", max_length=200)
+    organization_id: UUID | None = None
 
 
 class EventPatch(BaseModel):
@@ -33,6 +34,23 @@ class EventPatch(BaseModel):
     location: str | None = Field(default=None, max_length=300)
     survey_url: str | None = Field(default=None, max_length=2000)
     survey_label: str | None = Field(default=None, max_length=200)
+    organization_id: UUID | None = None
+
+
+def _apply_event_org_filter(stmt, orgs: str | None, include_global: bool):
+    """orgs: 콤마 구분 UUID. None이면 필터 없음(전체)."""
+
+    if orgs is None:
+        return stmt
+    ids = [UUID(x.strip()) for x in orgs.split(",") if x.strip()]
+    if not ids:
+        if include_global:
+            return stmt.where(Event.organization_id.is_(None))
+        return stmt.where(false())
+    parts = [Event.organization_id.in_(ids)]
+    if include_global:
+        parts.append(Event.organization_id.is_(None))
+    return stmt.where(or_(*parts))
 
 
 class EventTicketIssued(BaseModel):
@@ -50,6 +68,14 @@ def list_events(
         False,
         description="true면 현재 시각 이후 시작하는 일정만",
     ),
+    orgs: str | None = Query(
+        None,
+        description="콤마 구분 organization_id. 생략 시 전체 일정.",
+    ),
+    include_global: bool = Query(
+        True,
+        description="true면 소속 없는(전체) 일정도 함께 표시",
+    ),
 ) -> list[Event]:
     from datetime import timezone
 
@@ -57,6 +83,7 @@ def list_events(
     if upcoming_only:
         now = datetime.now(timezone.utc)
         stmt = stmt.where(Event.starts_at >= now)
+    stmt = _apply_event_org_filter(stmt, orgs, include_global)
     stmt = stmt.order_by(Event.starts_at.asc()).offset(offset).limit(limit)
     return list(session.exec(stmt).all())
 

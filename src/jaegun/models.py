@@ -13,15 +13,6 @@ def utc_now() -> datetime:
     return datetime.now(timezone.utc)
 
 
-class Announcement(SQLModel, table=True):
-    __tablename__ = "announcement"
-
-    id: UUID = Field(default_factory=uuid4, primary_key=True)
-    title: str = Field(max_length=200, index=True)
-    body: str = ""
-    created_at: datetime = Field(default_factory=utc_now)
-
-
 class User(SQLModel, table=True):
     """회원 — 전화번호 로그인 또는 Google OAuth (phone 비우면 OAuth 전용)."""
 
@@ -42,6 +33,57 @@ class User(SQLModel, table=True):
     created_at: datetime = Field(default_factory=utc_now)
 
 
+class Organization(SQLModel, table=True):
+    """재건 총회 · 노회 · 교회 계층. parent_id 로 트리."""
+
+    __tablename__ = "organization"
+
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    name: str = Field(max_length=200, index=True)
+    kind: str = Field(max_length=30, index=True)
+    parent_id: UUID | None = Field(default=None, foreign_key="organization.id", index=True)
+    created_by_user_id: UUID = Field(foreign_key="user.id", index=True)
+    status: str = Field(default="active", max_length=20)
+    created_at: datetime = Field(default_factory=utc_now)
+
+
+class OrgMembership(SQLModel, table=True):
+    __tablename__ = "org_membership"
+    __table_args__ = (UniqueConstraint("user_id", "organization_id", name="uq_org_membership_user_org"),)
+
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    user_id: UUID = Field(foreign_key="user.id", index=True)
+    organization_id: UUID = Field(foreign_key="organization.id", index=True)
+    role_key: str = Field(default="member", max_length=40)
+    role_label: str = Field(default="", max_length=100)
+    is_org_admin: bool = Field(default=False)
+    created_at: datetime = Field(default_factory=utc_now)
+
+
+class OrgDeletionRequest(SQLModel, table=True):
+    """공동체 관리자 삭제 신청 → 플랫폼 관리자 승인."""
+
+    __tablename__ = "org_deletion_request"
+
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    organization_id: UUID = Field(foreign_key="organization.id", index=True)
+    requested_by_user_id: UUID = Field(foreign_key="user.id", index=True)
+    reason: str = Field(default="", max_length=2000)
+    status: str = Field(default="pending", max_length=20)
+    created_at: datetime = Field(default_factory=utc_now)
+    resolved_at: datetime | None = Field(default=None)
+
+
+class Announcement(SQLModel, table=True):
+    __tablename__ = "announcement"
+
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    title: str = Field(max_length=200, index=True)
+    body: str = ""
+    organization_id: UUID | None = Field(default=None, foreign_key="organization.id", index=True)
+    created_at: datetime = Field(default_factory=utc_now)
+
+
 class Event(SQLModel, table=True):
     __tablename__ = "event"
 
@@ -53,6 +95,7 @@ class Event(SQLModel, table=True):
     location: str = Field(default="", max_length=300)
     survey_url: str = Field(default="", max_length=2000)
     survey_label: str = Field(default="참석 여부 설문조사", max_length=200)
+    organization_id: UUID | None = Field(default=None, foreign_key="organization.id", index=True)
     created_at: datetime = Field(default_factory=utc_now)
 
 
@@ -113,6 +156,8 @@ class BoardPost(SQLModel, table=True):
     author_user_id: UUID | None = Field(default=None, foreign_key="user.id", index=True)
     kind: str = Field(default="general", max_length=30)
     user_meeting_id: UUID | None = Field(default=None, foreign_key="user_meeting.id", index=True)
+    is_anonymous: bool = Field(default=False)
+    anonymous_handle: str = Field(default="", max_length=50)
     created_at: datetime = Field(default_factory=utc_now)
 
 

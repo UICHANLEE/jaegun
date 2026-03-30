@@ -85,6 +85,27 @@ function formatDt(iso) {
   return d.toLocaleString("ko-KR", { dateStyle: "medium", timeStyle: "short" });
 }
 
+async function loadAdminOrgSelects() {
+  const aOrg = document.getElementById("a-org");
+  const eOrg = document.getElementById("e-org");
+  if (!aOrg || !eOrg) return;
+  let orgs = [];
+  try {
+    orgs = await fetchJson("/api/orgs");
+  } catch {
+    return;
+  }
+  const fill = (sel, emptyLabel) => {
+    sel.innerHTML = "";
+    sel.appendChild(new Option(emptyLabel, ""));
+    for (const o of orgs) {
+      sel.appendChild(new Option(`${o.name} (${o.kind})`, o.id));
+    }
+  };
+  fill(aOrg, "전체 공지 (소속 없음)");
+  fill(eOrg, "전체 일정 (소속 없음)");
+}
+
 async function loadDashboard() {
   const summary = document.getElementById("dash-summary");
   try {
@@ -140,7 +161,7 @@ async function loadAnnouncements() {
       <li class="item-row">
         <div class="item-main">
           <strong>${escapeHtml(a.title)}</strong>
-          <span class="item-meta">${formatDt(a.created_at)}</span>
+          <span class="item-meta">${formatDt(a.created_at)}${a.organization_id ? ` · org ${escapeHtml(String(a.organization_id).slice(0, 8))}…` : ""}</span>
         </div>
         <button type="button" class="btn-danger btn-small" data-del-announce="${a.id}">삭제</button>
       </li>`
@@ -186,7 +207,7 @@ async function loadEvents() {
       <li class="item-row event-admin-item" style="flex-wrap:wrap">
         <div class="item-main" style="min-width:12rem;flex:1">
           <strong>${escapeHtml(ev.title)}</strong>
-          <span class="item-meta">${formatDt(ev.starts_at)}${ev.location ? ` · ${escapeHtml(ev.location)}` : ""}</span>
+          <span class="item-meta">${formatDt(ev.starts_at)}${ev.location ? ` · ${escapeHtml(ev.location)}` : ""}${ev.organization_id ? ` · org ${escapeHtml(String(ev.organization_id).slice(0, 8))}…` : ""}</span>
         </div>
         <div style="display:flex;flex-wrap:wrap;gap:0.35rem;align-items:center">
           <button type="button" class="btn-secondary btn-small" data-tickets-event="${ev.id}">발급 목록</button>
@@ -425,7 +446,7 @@ async function loadBoard() {
   list.hidden = true;
   empty.hidden = true;
   try {
-    const rows = await fetchJson("/api/board/posts?limit=200");
+    const rows = await fetchAdmin("/admin/board/posts?limit=200");
     loading.hidden = true;
     if (!rows.length) {
       empty.hidden = false;
@@ -435,10 +456,16 @@ async function loadBoard() {
     list.innerHTML = rows
       .map(
         (p) => `
-      <li class="item-row">
-        <div class="item-main">
+      <li class="item-row" style="flex-wrap:wrap">
+        <div class="item-main" style="min-width:12rem;flex:1">
           <strong>${escapeHtml(p.title)}</strong>
-          <span class="item-meta">${escapeHtml(p.author_name || "익명")} · ${formatDt(p.created_at)}</span>
+          <span class="item-meta">${formatDt(p.created_at)}</span>
+          ${
+            p.is_anonymous
+              ? `<br /><span class="item-meta">익명 · 핸들 ${escapeHtml(p.anonymous_handle || "—")}</span>
+                <br /><span class="item-meta">작성자 회원: ${p.author_user_id ? escapeHtml(p.author_member_display_name || p.author_user_id) : "—"} · ${p.author_member_phone ? escapeHtml(String(p.author_member_phone)) : ""}</span>`
+              : `<br /><span class="item-meta">표시명 ${escapeHtml(p.author_name || "—")}${p.author_user_id ? ` · 회원 ${escapeHtml(p.author_member_display_name || "")}` : ""}</span>`
+          }
         </div>
         <button type="button" class="btn-danger btn-small" data-del-board="${p.id}">삭제</button>
       </li>`
@@ -462,6 +489,70 @@ async function loadBoard() {
   }
 }
 
+async function loadOrgDeletionRequests() {
+  const loading = document.getElementById("orgdel-loading");
+  const list = document.getElementById("orgdel-list");
+  const empty = document.getElementById("orgdel-empty");
+  if (!loading || !list) return;
+  loading.textContent = "불러오는 중…";
+  loading.hidden = false;
+  list.hidden = true;
+  empty.hidden = true;
+  try {
+    const rows = await fetchAdmin("/admin/org-deletion-requests?status=pending");
+    loading.hidden = true;
+    if (!rows.length) {
+      empty.hidden = false;
+      return;
+    }
+    list.hidden = false;
+    list.innerHTML = rows
+      .map(
+        (r) => `
+      <li class="item-row" style="flex-wrap:wrap;align-items:flex-start">
+        <div class="item-main" style="min-width:12rem;flex:1">
+          <strong>${escapeHtml(r.organization_name)}</strong>
+          <span class="item-meta">${formatDt(r.created_at)} · 신청 ${escapeHtml(r.requester_display_name || "")}</span>
+          ${r.reason ? `<p class="muted" style="margin:0.35rem 0 0;font-size:0.85rem">${escapeHtml(r.reason)}</p>` : ""}
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:0.35rem">
+          <button type="button" class="btn-secondary btn-small" data-orgdel-approve="${r.id}">승인(삭제)</button>
+          <button type="button" class="btn-danger btn-small" data-orgdel-reject="${r.id}">거절</button>
+        </div>
+      </li>`
+      )
+      .join("");
+    list.querySelectorAll("[data-orgdel-approve]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        if (!confirm("이 공동체(및 하위)를 비활성화할까요? 되돌리려면 DB에서 status를 다시 active로 바꿔야 합니다.")) return;
+        try {
+          await fetchAdmin(`/admin/org-deletion-requests/${btn.dataset.orgdelApprove}/approve`, { method: "POST" });
+          showAlert("승인했습니다.", false);
+          loadOrgDeletionRequests();
+        } catch (e) {
+          showAlert(e.message, true);
+        }
+      });
+    });
+    list.querySelectorAll("[data-orgdel-reject]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        if (!confirm("이 삭제 신청을 거절할까요?")) return;
+        try {
+          await fetchAdmin(`/admin/org-deletion-requests/${btn.dataset.orgdelReject}/reject`, { method: "POST" });
+          showAlert("거절했습니다.", false);
+          loadOrgDeletionRequests();
+        } catch (e) {
+          showAlert(e.message, true);
+        }
+      });
+    });
+  } catch (e) {
+    loading.textContent = `오류: ${e.message}`;
+  }
+}
+
+document.getElementById("orgdel-refresh")?.addEventListener("click", () => loadOrgDeletionRequests());
+
 function switchTab(tab) {
   document.querySelectorAll(".tab-btn").forEach((b) => {
     b.classList.toggle("active", b.dataset.tab === tab);
@@ -479,6 +570,7 @@ function switchTab(tab) {
     loadMonthlyPlans();
   }
   if (tab === "board") loadBoard();
+  if (tab === "orgdel") loadOrgDeletionRequests();
   if (tab === "bigmeet") loadBigMeetingTickets();
 }
 
@@ -500,9 +592,12 @@ document.getElementById("form-announce").addEventListener("submit", async (e) =>
   const title = document.getElementById("a-title").value.trim();
   const body = document.getElementById("a-body").value;
   try {
+    const orgId = document.getElementById("a-org").value.trim();
+    const payload = { title, body };
+    if (orgId) payload.organization_id = orgId;
     await fetchAdmin("/admin/announcements", {
       method: "POST",
-      body: JSON.stringify({ title, body }),
+      body: JSON.stringify(payload),
     });
     showAlert("공지를 등록했습니다.", false);
     e.target.reset();
@@ -528,17 +623,20 @@ document.getElementById("form-event").addEventListener("submit", async (e) => {
   const survey_label =
     document.getElementById("e-survey-label").value.trim() || "참석 여부 설문조사";
   try {
+    const orgIdEv = document.getElementById("e-org").value.trim();
+    const payloadEv = {
+      title,
+      description,
+      starts_at,
+      ends_at: null,
+      location,
+      survey_url,
+      survey_label,
+    };
+    if (orgIdEv) payloadEv.organization_id = orgIdEv;
     await fetchAdmin("/admin/events", {
       method: "POST",
-      body: JSON.stringify({
-        title,
-        description,
-        starts_at,
-        ends_at: null,
-        location,
-        survey_url,
-        survey_label,
-      }),
+      body: JSON.stringify(payloadEv),
     });
     showAlert("일정을 등록했습니다.", false);
     e.target.reset();
@@ -616,6 +714,7 @@ function finishBoot() {
   document.getElementById("mo-list-year").value = String(y);
   document.getElementById("mo-month").value = String(new Date().getMonth() + 1);
   initTabs();
+  void loadAdminOrgSelects();
   loadDashboard();
 }
 

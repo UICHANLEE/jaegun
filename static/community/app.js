@@ -75,6 +75,101 @@ function refreshLoginHint() {
 
 let upcomingOnly = true;
 
+const ORG_FILTER_IDS_KEY = "jaegun_org_filter_ids";
+const ORG_FILTER_GLOBAL_KEY = "jaegun_org_include_global";
+
+function getSelectedOrgIds() {
+  try {
+    const raw = localStorage.getItem(ORG_FILTER_IDS_KEY);
+    if (!raw) return [];
+    const a = JSON.parse(raw);
+    return Array.isArray(a) ? a.filter((x) => typeof x === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+function setSelectedOrgIds(ids) {
+  localStorage.setItem(ORG_FILTER_IDS_KEY, JSON.stringify(ids));
+}
+
+function getIncludeGlobalOrgs() {
+  return localStorage.getItem(ORG_FILTER_GLOBAL_KEY) !== "false";
+}
+
+function setIncludeGlobalOrgs(v) {
+  localStorage.setItem(ORG_FILTER_GLOBAL_KEY, v ? "true" : "false");
+}
+
+/** 선택한 공동체가 있을 때만 쿼리 접미사 (&orgs=...&include_global=...) */
+function orgFeedQuerySuffix() {
+  const ids = getSelectedOrgIds();
+  if (!ids.length) return "";
+  const g = getIncludeGlobalOrgs();
+  return `&orgs=${encodeURIComponent(ids.join(","))}&include_global=${g ? "true" : "false"}`;
+}
+
+function announcementsFeedUrl() {
+  const suf = orgFeedQuerySuffix();
+  return suf ? `/api/announcements?${suf.slice(1)}` : "/api/announcements";
+}
+
+function eventsFeedUrl() {
+  let u = `/api/events?upcoming_only=${upcomingOnly ? "true" : "false"}`;
+  const suf = orgFeedQuerySuffix();
+  if (suf) u += suf;
+  return u;
+}
+
+let orgListCached = [];
+
+async function initOrgFilters() {
+  const home = document.getElementById("org-filter-home");
+  if (!home) return;
+  try {
+    orgListCached = await fetchJson("/api/orgs");
+  } catch {
+    orgListCached = [];
+  }
+  const selected = new Set(getSelectedOrgIds());
+  const kindLabel = (k) =>
+    ({ general_assembly: "총회", presbytery: "노회", church: "교회" }[k] || k);
+  const inner =
+    orgListCached.length === 0
+      ? '<p class="muted" style="margin:0;font-size:0.85rem">등록된 공동체가 없습니다. 전체 공지·일정이 표시됩니다.</p>'
+      : `
+    <p class="hint" style="margin:0 0 0.5rem;font-size:0.85rem">
+      공동체를 고르면 해당 범위의 공지·일정만 보입니다. 아무 것도 고르지 않으면 전체입니다.
+    </p>
+    <div class="org-filter-chips" style="display:flex;flex-wrap:wrap;gap:0.15rem 0.75rem">
+      ${orgListCached
+        .map(
+          (o) => `
+        <label class="checkbox-label" style="display:flex;align-items:center;gap:0.35rem;margin:0">
+          <input type="checkbox" class="org-filter-cb" value="${escapeHtml(o.id)}" ${selected.has(o.id) ? "checked" : ""} />
+          <span>${escapeHtml(o.name)} <span class="muted" style="font-size:0.75rem">(${escapeHtml(kindLabel(o.kind))})</span></span>
+        </label>`
+        )
+        .join("")}
+    </div>
+    <label class="checkbox-label" style="display:flex;align-items:center;gap:0.35rem;margin-top:0.6rem">
+      <input type="checkbox" class="org-include-global-cb" ${getIncludeGlobalOrgs() ? "checked" : ""} />
+      <span>전체(소속 없음) 공지·일정도 함께 보기</span>
+    </label>`;
+  home.innerHTML = `<div class="card" style="padding:0.75rem 1rem;margin-bottom:1rem"><h4 class="section-title" style="margin:0 0 0.5rem;font-size:1rem">공동체 보기 범위</h4>${inner}</div>`;
+
+  const syncAndReload = () => {
+    const ids = [...home.querySelectorAll(".org-filter-cb:checked")].map((x) => x.value);
+    setSelectedOrgIds(ids);
+    const ig = home.querySelector(".org-include-global-cb");
+    setIncludeGlobalOrgs(ig ? ig.checked : true);
+    void loadFeed();
+  };
+  home.querySelectorAll(".org-filter-cb").forEach((cb) => cb.addEventListener("change", syncAndReload));
+  const ig = home.querySelector(".org-include-global-cb");
+  if (ig) ig.addEventListener("change", syncAndReload);
+}
+
 function animateCounter(el, from, to, durationMs) {
   if (!el || from === to) {
     if (el) el.textContent = String(to);
@@ -147,8 +242,8 @@ async function loadFeed() {
 
   try {
     const [announcements, events, bmStatus] = await Promise.all([
-      fetchJson("/api/announcements"),
-      fetchJson(`/api/events?upcoming_only=${upcomingOnly ? "true" : "false"}`),
+      fetchJson(announcementsFeedUrl()),
+      fetchJson(eventsFeedUrl()),
       fetchJson("/api/big-meeting/status").catch(() => ({ issued_count: 0, my_number: null })),
     ]);
 
@@ -373,7 +468,11 @@ async function loadBoard() {
       for (const p of posts) {
         const li = document.createElement("li");
         li.className = "card";
-        const author = p.author_name ? ` · ${escapeHtml(p.author_name)}` : "";
+        const author = p.author_name
+          ? ` · ${escapeHtml(p.author_name)}`
+          : p.is_anonymous
+            ? " · 익명"
+            : "";
         const kind =
           p.kind === "user_meeting"
             ? ` <span class="muted" style="font-size:0.75rem">(소모임 공유)</span>`
@@ -543,9 +642,19 @@ document.getElementById("board-form").addEventListener("submit", async (e) => {
   btn.disabled = true;
   hideAlert();
   try {
+    const isAnon = document.getElementById("board-anonymous")?.checked;
+    if (isAnon && !getAccessToken()) {
+      showAlert("익명 글은 로그인이 필요합니다.");
+      return;
+    }
     await fetchJson("/api/board/posts", {
       method: "POST",
-      body: JSON.stringify({ title, body, author_name }),
+      body: JSON.stringify({
+        title,
+        body,
+        author_name,
+        is_anonymous: !!isAnon,
+      }),
     });
     document.getElementById("board-title").value = "";
     document.getElementById("board-body").value = "";
@@ -743,4 +852,4 @@ document.getElementById("big-meeting-btn")?.addEventListener("click", async () =
 });
 
 refreshLoginHint();
-loadFeed();
+void initOrgFilters().then(() => loadFeed());
